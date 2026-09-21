@@ -1,0 +1,37 @@
+# Authoring and evidence policy
+
+## Separate product facts from course hypotheses
+
+The course uses three evidence labels:
+
+- **Documented** — supported by a linked primary source.
+- **Observed** — produced by a committed, reproducible experiment in this repo.
+- **Proposed** — a design choice or experiment that has not yet been measured.
+
+The 1B-class model, synthetic-data volume, fine-tuning recipe, quantization
+format, and edge latency are proposed until experiments make them observed.
+
+## Data and model gates
+
+Before generating training data, add a data card that records:
+
+1. the teacher model and exact terms that permit the intended use of outputs;
+2. the prompt and filtering pipeline;
+3. whether user or production data is excluded;
+4. personally identifying and location-data handling;
+5. the license for every base model, dataset, and published artifact.
+
+If those rights are ambiguous, do not train or publish weights from the data.
+
+## Safety boundary
+
+RoutePilot may propose a search, rank candidates, or suggest a route stop. It
+does not actuate the vehicle, silently alter navigation, or override a driver.
+Applications integrating it must enforce policy, distraction controls, and
+confirmation outside the model.
+
+## Generated artifacts
+
+Markdown under `reading/` is source. Generated HTML, lecture bundles, and audio
+are build artifacts and must be reproducible. Pin the renderer and syntax
+highlighter versions before committing generated HTML so rebuilds are no-ops.

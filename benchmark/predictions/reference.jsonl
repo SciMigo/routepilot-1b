@@ -1,0 +1,4 @@
+{"scenario_id":"ord-asian-stop","tool_call":{"name":"search_route_stops","arguments":{"category":"food","cuisines":["chinese","japanese","korean","thai","vietnamese"],"max_detour_minutes":10,"max_service_minutes":25}},"choice_id":"seoul-kitchen","clarification":null}
+{"scenario_id":"ev-fast-charge","tool_call":{"name":"search_route_chargers","arguments":{"connector":"CCS","minimum_power_kw":150,"max_detour_minutes":8,"available_now":true}},"choice_id":"express-hub","clarification":null}
+{"scenario_id":"coffee-open-now","tool_call":{"name":"search_route_stops","arguments":{"category":"coffee","max_detour_minutes":5,"open_now":true}},"choice_id":"early-bird","clarification":null}
+{"scenario_id":"charger-needs-connector","tool_call":null,"choice_id":null,"clarification":"Which charging connector does the vehicle use?"}
