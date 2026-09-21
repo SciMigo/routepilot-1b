@@ -21,6 +21,12 @@ Before generating training data, add a data card that records:
 4. personally identifying and location-data handling;
 5. the license for every base model, dataset, and published artifact.
 
+Source and model licenses are recorded in `reading/_sources/manifest.json`.
+Each entry carries a `licenseStatus`: `documented` means the license was read
+from the linked primary source, `unverified` means it has not been checked.
+An `unverified` entry is safe to paraphrase and link, but it is not evidence
+of a right to train on or redistribute anything.
+
 If those rights are ambiguous, do not train or publish weights from the data.
 
 ## Safety boundary

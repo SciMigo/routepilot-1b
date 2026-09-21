@@ -20,4 +20,5 @@ Each module must leave behind something executable or inspectable.
    limitations, and integration contract.
 
 The benchmark grows across modules, but Module 1 fixtures remain immutable
-except for corrections documented in the changelog.
+except for corrections documented in `benchmark/CHANGELOG.md`, which also
+records what counts as a correction rather than a new benchmark version.
