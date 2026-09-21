@@ -7,12 +7,11 @@ import unittest
 
 from benchmark.routepilot_eval.errors import FixtureError
 from benchmark.routepilot_eval.io import load_jsonl
-from benchmark.routepilot_eval.oracle import candidate_is_feasible, utility
+from benchmark.routepilot_eval.oracle import candidate_is_feasible, expected_choice, utility
 from benchmark.routepilot_eval.scoring import evaluate
 from benchmark.routepilot_eval.validation import validate_scenario_file, validate_scenarios
+from benchmark.tests.fixtures import SCENARIO_PATH
 
-
-SCENARIO_PATH = "benchmark/scenarios/module-01.jsonl"
 
 
 class ValidationTests(unittest.TestCase):
@@ -60,7 +59,9 @@ class ValidationTests(unittest.TestCase):
         weights = scenarios[2]["utility_weights"]
         weights["servce_minutes"] = weights.pop("service_minutes")
         problems = validate_scenarios(scenarios)
-        self.assertIn("utility weight 'servce_minutes' has no matching candidate field", problems[0])
+        self.assertIn(
+            "utility weight 'servce_minutes' has no matching candidate field", problems[0]
+        )
 
     def test_null_signal_is_an_error_not_a_crash(self) -> None:
         scenarios = self.altered()
@@ -87,7 +88,9 @@ class ValidationTests(unittest.TestCase):
 
         scenarios = self.altered()
         scenarios[0]["expected_call"]["arguments"] = ["not", "an", "object"]
-        self.assertIn("'expected_call.arguments' must be an object", validate_scenarios(scenarios)[0])
+        self.assertIn(
+            "'expected_call.arguments' must be an object", validate_scenarios(scenarios)[0]
+        )
 
         with self.assertRaises(FixtureError) as caught:
             evaluate([{"no": "id"}], [])
@@ -101,6 +104,56 @@ class ValidationTests(unittest.TestCase):
         scenarios = self.altered()
         scenarios[0]["candidates"][1]["id"] = "seoul-kitchen"
         self.assertIn("duplicate candidate id", " ".join(validate_scenarios(scenarios)))
+
+
+class ConstraintProvenanceTests(unittest.TestCase):
+    """Every hard constraint must say where its value came from."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.scenarios = load_jsonl(SCENARIO_PATH)
+
+    def altered(self) -> list[dict]:
+        return copy.deepcopy(self.scenarios)
+
+    def test_every_committed_constraint_declares_a_source(self) -> None:
+        for scenario in self.scenarios:
+            for rule in scenario["hard_constraints"]:
+                with self.subTest(scenario=scenario["id"], field=rule["field"]):
+                    self.assertIn(rule["source"], ("request", "context", "policy"))
+
+    def test_policy_constants_carry_an_explanation(self) -> None:
+        for scenario in self.scenarios:
+            for rule in scenario["hard_constraints"]:
+                if rule["source"] == "policy":
+                    with self.subTest(scenario=scenario["id"], field=rule["field"]):
+                        self.assertTrue(rule.get("note", "").strip())
+
+    def test_missing_source_is_reported(self) -> None:
+        scenarios = self.altered()
+        del scenarios[0]["hard_constraints"][3]["source"]
+        self.assertIn("is missing 'source'", validate_scenarios(scenarios)[0])
+
+    def test_policy_without_a_note_is_reported(self) -> None:
+        scenarios = self.altered()
+        scenarios[0]["hard_constraints"][3]["note"] = "   "
+        self.assertIn("must carry a 'note'", validate_scenarios(scenarios)[0])
+
+    def test_unknown_source_is_reported(self) -> None:
+        scenarios = self.altered()
+        scenarios[0]["hard_constraints"][3]["source"] = "vibes"
+        self.assertIn("expected one of request, context, policy", validate_scenarios(scenarios)[0])
+
+    def test_provenance_does_not_change_the_oracle(self) -> None:
+        """Annotations are for readers; the ranking must ignore them."""
+        scenarios = self.altered()
+        for scenario in scenarios:
+            for rule in scenario["hard_constraints"]:
+                rule.pop("source", None)
+                rule.pop("note", None)
+        for annotated, bare in zip(self.scenarios, scenarios):
+            with self.subTest(scenario=annotated["id"]):
+                self.assertEqual(expected_choice(annotated), expected_choice(bare))
 
 
 class OracleTypingTests(unittest.TestCase):

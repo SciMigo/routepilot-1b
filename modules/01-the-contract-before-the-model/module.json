@@ -5,14 +5,20 @@
   "description": "Turn an in-car request into an explicit tool contract and a deterministic evaluation. Separate changing world facts from model behavior, hard constraints from soft preferences, and extraction errors from ranking errors before generating a single training example.",
   "estimatedMinutes": 90,
   "prerequisites": [],
-  "reading": "reading/01-the-contract-before-the-model.html",
+  "reading": "reading/01-the-contract-before-the-model.md",
   "generation": {
     "minSlides": 10,
     "maxSlides": 14,
     "targetSeconds": 480,
     "preset": "engineering_course",
-    "referenceFiles": ["01-the-contract-before-the-model.md"],
-    "diagramTemplates": ["flow_diagram", "comparison", "scorecard"],
+    "referenceFiles": [
+      "reading/01-the-contract-before-the-model.md"
+    ],
+    "diagramTemplates": [
+      "flow_diagram",
+      "comparison",
+      "scorecard"
+    ],
     "interactionCheckpoints": 2,
     "enableFragments": true,
     "enableImages": false,
@@ -22,7 +28,12 @@
   "lab": {
     "title": "Lab 1: audit the RoutePilot contract",
     "engine": "pyodide",
-    "exercises": ["1.1", "1.2", "1.3", "1.4"],
+    "exercises": [
+      "1.1",
+      "1.2",
+      "1.3",
+      "1.4"
+    ],
     "path": "benchmark"
   }
 }

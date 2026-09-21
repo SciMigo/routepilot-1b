@@ -130,6 +130,15 @@ declared product policy consistently. If the policy is wrong, change the policy
 and version the benchmark; do not quietly relabel whichever answer the newest
 model prefers.
 
+That is only possible if a reader can tell which constraints are policy in the
+first place. Each hard constraint in the fixture records whether its value came
+from the request, from the supplied context, or from a product decision — and a
+policy constant must say what the decision was. In the worked example, the
+detour limit is quoted from the driver and the arrival limit comes from the
+context, but the 25-minute service cap is a choice about what "quick" means. It
+is also the only reason one candidate is rejected. A constraint that decides an
+answer and cannot be traced is indistinguishable from a mistake.
+
 ## Clarification is part of the contract
 
 Some requests should not trigger a tool immediately. “Find a charger” is

@@ -20,8 +20,12 @@ is only the generic viewer.
 ## Verification
 
 ```bash
-python3 -m unittest discover -s benchmark/tests -v
+python3 -m unittest discover -v
 python3 -m benchmark.routepilot_eval.cli \
   benchmark/scenarios/module-01.jsonl \
   benchmark/predictions/reference.jsonl
 ```
+
+Run both from the repository root. The evaluator exits `2` when a scenario file
+fails validation and `1` when the prediction file does not reconcile with it, so
+either command is safe to use as a CI gate.

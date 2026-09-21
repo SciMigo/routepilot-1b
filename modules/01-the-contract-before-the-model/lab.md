@@ -25,6 +25,14 @@ Copy the reference predictions and change `ord-asian-stop` to choose
 `thai-express`. Run the evaluator again. Identify which metrics changed and why
 the tool-call metric did not.
 
+Then find the single constraint that makes `thai-express` infeasible. It is not
+the detour (4 minutes against a 10-minute limit) and not the deadline (arrival
+104 against 105). It is `service_minutes <= 25`, whose `source` is `policy`:
+a declared decision about what "quick" means, which no amount of reading the
+request will derive. Read its `note`, then argue for or against the number.
+Deciding it is wrong is a legitimate outcome — the response is to change the
+policy and version the benchmark, not to relabel the expected answer.
+
 ## 1.3 Lose a constraint
 
 Restore the choice, then remove `max_detour_minutes` from the same prediction's

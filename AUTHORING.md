@@ -35,3 +35,8 @@ confirmation outside the model.
 Markdown under `reading/` is source. Generated HTML, lecture bundles, and audio
 are build artifacts and must be reproducible. Pin the renderer and syntax
 highlighter versions before committing generated HTML so rebuilds are no-ops.
+
+Until a pinned renderer exists, a module manifest points at the Markdown
+source. A manifest must not reference a build artifact that nothing in the
+repository produces: a path that resolves to nothing is worse than a path to
+the source, because it fails only at view time.

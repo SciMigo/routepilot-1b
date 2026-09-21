@@ -21,6 +21,46 @@ from .oracle import expected_choice
 
 REQUIRED_SCENARIO_KEYS = ("id", "expected_clarification", "expected_choice_id")
 
+#: Where a hard constraint came from. `request` and `context` mean a reader can
+#: derive the value from the scenario itself; `policy` means it is a declared
+#: product decision that no amount of reading will derive, and so must carry a
+#: note saying what the decision is.
+CONSTRAINT_SOURCES = ("request", "context", "policy")
+
+
+def _check_constraints(scenario: dict[str, Any], where: str, problems: list[str]) -> None:
+    """Every hard constraint must say where its value came from.
+
+    The fixture's claim to be auditable by hand depends on this. A constant a
+    reader cannot derive and cannot trace is indistinguishable from a mistake,
+    and here it is the only thing standing between a candidate and the
+    module's flagship safety example.
+    """
+    for position, rule in enumerate(scenario.get("hard_constraints", [])):
+        if not isinstance(rule, dict):
+            problems.append(f"{where}: hard_constraints[{position}] must be an object")
+            continue
+        label = f"{where}: hard constraint {rule.get('field', position)!r}"
+        for key in ("field", "op", "value"):
+            if key not in rule:
+                problems.append(f"{label} is missing {key!r}")
+        source = rule.get("source")
+        if source is None:
+            problems.append(
+                f"{label} is missing 'source'; say whether the value comes from the "
+                f"request, the context, or declared policy"
+            )
+        elif source not in CONSTRAINT_SOURCES:
+            problems.append(
+                f"{label} has source {source!r}; expected one of "
+                f"{', '.join(CONSTRAINT_SOURCES)}"
+            )
+        elif source == "policy" and not str(rule.get("note", "")).strip():
+            problems.append(
+                f"{label} is declared policy and must carry a 'note' saying what the "
+                f"decision is; a reader cannot derive it from the scenario"
+            )
+
 
 def _check_shape(scenario: dict[str, Any], where: str, problems: list[str]) -> bool:
     """Structural checks. Returns False when the oracle cannot safely run."""
@@ -77,6 +117,8 @@ def _check_shape(scenario: dict[str, Any], where: str, problems: list[str]) -> b
 
     if not isinstance(scenario.get("hard_constraints", []), list):
         problems.append(f"{where}: 'hard_constraints' must be a list")
+    else:
+        _check_constraints(scenario, where, problems)
 
     return len(problems) == before
 

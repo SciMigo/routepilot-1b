@@ -113,7 +113,9 @@ def rank_candidates(scenario: dict[str, Any]) -> list[tuple[str, float]]:
     ranked: list[tuple[str, float]] = []
     for candidate in scenario.get("candidates", []):
         if not isinstance(candidate, dict):
-            raise FixtureError(f"{_label(scenario)}: candidate must be an object, got {candidate!r}")
+            raise FixtureError(
+                f"{_label(scenario)}: candidate must be an object, got {candidate!r}"
+            )
         candidate_id = candidate.get("id")
         if not isinstance(candidate_id, str):
             raise FixtureError(

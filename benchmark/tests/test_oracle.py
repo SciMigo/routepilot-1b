@@ -5,10 +5,8 @@ import unittest
 from benchmark.routepilot_eval.io import load_jsonl
 from benchmark.routepilot_eval.oracle import candidate_is_feasible, expected_choice
 from benchmark.routepilot_eval.scoring import evaluate
+from benchmark.tests.fixtures import SCENARIO_PATH, PREDICTION_PATH
 
-
-SCENARIO_PATH = "benchmark/scenarios/module-01.jsonl"
-PREDICTION_PATH = "benchmark/predictions/reference.jsonl"
 
 
 class OracleTests(unittest.TestCase):

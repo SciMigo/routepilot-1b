@@ -11,6 +11,28 @@ The Module 1 fixture is deliberately small enough to audit by hand. It tests
 the evaluator and contract, not model quality. Later releases should add held-
 out cases without silently editing these fixtures.
 
+## Where every constraint came from
+
+Auditing by hand only works if a reader can trace each constraint to something.
+Every hard constraint therefore declares a `source`:
+
+- `request` — quoted or paraphrased from the driver's words;
+- `context` — taken from the scenario's synthetic context block;
+- `policy` — a declared product decision that cannot be derived from either,
+  and which must carry a `note` saying what the decision is.
+
+`ord-asian-stop` is the case that makes this matter. Its
+`service_minutes <= 25` rule is the only thing that makes `thai-express`
+infeasible, and it is `policy`: the deadline is already enforced by
+`arrival_minutes <= 105`, and a 30-minute service budget would satisfy the
+deadline too. The number is a choice about what "quick" means, not a
+derivation. If it is the wrong choice, change the policy and version the
+benchmark — do not relabel the expected answer.
+
+`source` and `note` are documentation. The oracle reads only `field`, `op`,
+and `value`, and a test asserts that stripping the annotations leaves every
+expected choice unchanged.
+
 ## Scoring rules
 
 Three rules decide what the numbers mean. They are stated here, in the module
