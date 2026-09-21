@@ -8,6 +8,11 @@ import sys
 
 from .io import load_jsonl
 from .scoring import evaluate
+from .validation import validate_scenario_file
+
+EXIT_OK = 0
+EXIT_RECONCILIATION = 1
+EXIT_INVALID_FIXTURE = 2
 
 
 def main() -> int:
@@ -15,6 +20,17 @@ def main() -> int:
     parser.add_argument("scenarios", help="scenario JSONL path")
     parser.add_argument("predictions", help="prediction JSONL path")
     args = parser.parse_args()
+
+    # Validate the fixture before scoring anything. A malformed scenario is a
+    # problem with the benchmark, not with the model under test, and every
+    # problem is reported at once rather than one exception at a time.
+    problems = validate_scenario_file(args.scenarios)
+    if problems:
+        print(f"{args.scenarios}: {len(problems)} problem(s)", file=sys.stderr)
+        for problem in problems:
+            print(f"  {problem}", file=sys.stderr)
+        return EXIT_INVALID_FIXTURE
+
     result = evaluate(load_jsonl(args.scenarios), load_jsonl(args.predictions))
     print(json.dumps(result, indent=2, sort_keys=True))
 
@@ -31,8 +47,8 @@ def main() -> int:
             'see "reconciliation" in the result',
             file=sys.stderr,
         )
-        return 1
-    return 0
+        return EXIT_RECONCILIATION
+    return EXIT_OK
 
 
 if __name__ == "__main__":

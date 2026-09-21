@@ -41,3 +41,27 @@ a different run than the caller is reading.
 
 Duplicate `scenario_id` lines resolve to the first occurrence, so a re-run of
 the same file always produces the same score.
+
+## Fixture validation
+
+Scenario files are validated before any scoring happens. `validate_scenario_file`
+returns one line per problem — an empty list means the fixture is sound — and
+each line names the file, the line, and the scenario it came from:
+
+```text
+benchmark/scenarios/module-01.jsonl:1: scenario 'ord-asian-stop' candidate
+'seoul-kitchen': utility weight 'servce_minutes' has no matching candidate field
+```
+
+The CLI runs this first and exits `2` without scoring if anything is wrong, so
+a malformed fixture is never reported as a bad model. Validation collects every
+problem rather than stopping at the first, and it is a separate pass from
+scoring: a scenario whose declared `expected_choice_id` disagrees with the
+oracle is a fixture defect, not a reason for the evaluator to produce no
+metrics at all.
+
+Two rules about types are worth stating because they decide feasibility:
+
+- **Equality is type-checked.** `"open": 1` does not satisfy `open == true`.
+- **A utility weight naming an absent candidate signal is an error**, not a
+  zero, so a typo in `utility_weights` cannot quietly reorder the ranking.

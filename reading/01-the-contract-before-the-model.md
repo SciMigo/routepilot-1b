@@ -102,6 +102,12 @@ fails one is removed. The Module 1 fixture uses simple typed operations such as
 equal, less-than-or-equal, greater-than-or-equal, and contains-any. Later
 modules may add derived fields, but the derivation must remain inspectable.
 
+Equality is checked against the declared type, not against Python's coercion
+rules. A candidate reporting `"open": 1` does not satisfy `open == true`, even
+though the language would say it does. A tool adapter that spells a flag as
+`0`/`1` would otherwise change which candidates are feasible — and therefore
+what the oracle's expected answer is — with nothing visible in the fixture.
+
 Second, feasible candidates receive a utility score from declared weights:
 
 ```text
@@ -112,6 +118,11 @@ Positive weights reward a preference match or rating. Negative weights penalize
 detour and service time. A stable candidate ID breaks exact ties. Because the
 fixture includes both the facts and weights, a reviewer can reproduce the
 expected ordering without asking another model to judge it.
+
+Read that formula literally: a weight naming a signal the candidate does not
+have is an error, not a zero. Treating it as zero would let a typo in the
+weights quietly reorder the ranking, and the only symptom would be a complaint
+about the scenario's declared answer — pointing nowhere near the typo.
 
 This oracle is deliberately narrower than human taste. Its job is not to define
 the one true restaurant choice. Its job is to test whether a model follows a

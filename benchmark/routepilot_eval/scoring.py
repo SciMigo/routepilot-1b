@@ -28,6 +28,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .errors import FixtureError
 from .oracle import candidate_is_feasible, expected_choice
 
 
@@ -50,10 +51,42 @@ def _valid_prediction(prediction: dict[str, Any]) -> bool:
     return True
 
 
-def _argument_pairs(call: dict[str, Any] | None) -> set[tuple[str, str]]:
+def _canonical(value: Any) -> tuple[Any, ...]:
+    """A hashable, comparison-stable form of a JSON value.
+
+    Two arguments express the same constraint when they differ only in how
+    JSON spelled them: `10` against `10.0`, or a filter list in a different
+    order. Comparing `repr()` scored those as extraction defects, which is
+    exactly the signal the module says should drive the next data pass.
+    """
+    if isinstance(value, bool):
+        return ("bool", value)
+    if isinstance(value, (int, float)):
+        number = float(value)
+        return ("number", int(number) if number.is_integer() else number)
+    if isinstance(value, str):
+        return ("string", value)
+    if value is None:
+        return ("null",)
+    if isinstance(value, list):
+        # List-valued arguments in this contract are filter sets -- cuisines,
+        # connectors -- so order carries no meaning. Repetition still does.
+        return ("list", tuple(sorted((_canonical(item) for item in value), key=repr)))
+    if isinstance(value, dict):
+        return ("object", tuple(sorted((key, _canonical(item)) for key, item in value.items())))
+    return ("other", repr(value))
+
+
+def _argument_pairs(call: dict[str, Any] | None) -> set[tuple[str, tuple[Any, ...]]]:
     if not call:
         return set()
-    return {(key, repr(value)) for key, value in call.get("arguments", {}).items()}
+    arguments = call.get("arguments", {})
+    if not isinstance(arguments, dict):
+        raise FixtureError(
+            f"tool call {call.get('name')!r}: 'arguments' must be an object, "
+            f"got {arguments!r}"
+        )
+    return {(key, _canonical(value)) for key, value in arguments.items()}
 
 
 def _tool_matches(
@@ -131,8 +164,14 @@ def evaluate(
     }
     details: list[dict[str, Any]] = []
 
-    for scenario in scenarios:
-        prediction = by_id.get(scenario["id"])
+    for index, scenario in enumerate(scenarios):
+        scenario_id = scenario.get("id")
+        if not isinstance(scenario_id, str):
+            raise FixtureError(
+                f"scenario[{index}]: 'id' must be a string, got {scenario_id!r}; "
+                f"run validate_scenarios() for the full report"
+            )
+        prediction = by_id.get(scenario_id)
         present = prediction is not None
         valid = present and _valid_prediction(prediction)
         totals["present"] += int(present)
@@ -161,12 +200,6 @@ def evaluate(
         totals["clarification_correct"] += int(clarification_correct)
 
         oracle_choice = expected_choice(scenario)
-        declared_choice = scenario.get("expected_choice_id")
-        if oracle_choice != declared_choice:
-            raise ValueError(
-                f"scenario {scenario['id']}: declared choice {declared_choice!r} "
-                f"does not match oracle {oracle_choice!r}"
-            )
 
         # Rule 2: read the named choice off the raw prediction, not the payload,
         # so a schema failure cannot hide an unsafe suggestion.
@@ -195,7 +228,7 @@ def evaluate(
 
         details.append(
             {
-                "scenario_id": scenario["id"],
+                "scenario_id": scenario_id,
                 "prediction_present": present,
                 "schema_valid": valid,
                 "tool_correct": tool_correct,

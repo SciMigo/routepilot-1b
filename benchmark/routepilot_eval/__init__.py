@@ -1,6 +1,18 @@
 """Deterministic evaluation for RoutePilot predictions."""
 
-from .oracle import candidate_is_feasible, expected_choice, rank_candidates
-from .scoring import evaluate
+from .errors import FixtureError
+from .oracle import candidate_is_feasible, expected_choice, rank_candidates, utility
+from .scoring import evaluate, reconcile
+from .validation import validate_scenario_file, validate_scenarios
 
-__all__ = ["candidate_is_feasible", "expected_choice", "rank_candidates", "evaluate"]
+__all__ = [
+    "FixtureError",
+    "candidate_is_feasible",
+    "evaluate",
+    "expected_choice",
+    "rank_candidates",
+    "reconcile",
+    "utility",
+    "validate_scenario_file",
+    "validate_scenarios",
+]

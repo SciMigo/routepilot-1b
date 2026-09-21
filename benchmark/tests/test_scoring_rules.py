@@ -142,6 +142,38 @@ class ScoringRuleTests(unittest.TestCase):
             evaluate(self.scenarios, abstaining)["metrics"]["selection_coverage"], 1.0
         )
 
+    # Argument comparison: same constraint, different JSON spelling.
+
+    def test_list_argument_order_is_not_an_extraction_defect(self) -> None:
+        predictions = self.predictions()
+        arguments = predictions[0]["tool_call"]["arguments"]
+        arguments["cuisines"] = list(reversed(arguments["cuisines"]))
+        metrics = evaluate(self.scenarios, predictions)["metrics"]
+        self.assertEqual(1.0, metrics["constraint_precision"])
+        self.assertEqual(1.0, metrics["constraint_recall"])
+
+    def test_integral_float_matches_integer(self) -> None:
+        predictions = self.predictions()
+        predictions[0]["tool_call"]["arguments"]["max_detour_minutes"] = 10.0
+        metrics = evaluate(self.scenarios, predictions)["metrics"]
+        self.assertEqual(1.0, metrics["constraint_precision"])
+        self.assertEqual(1.0, metrics["constraint_recall"])
+
+    def test_a_genuinely_different_value_still_misses(self) -> None:
+        predictions = self.predictions()
+        predictions[0]["tool_call"]["arguments"]["max_detour_minutes"] = 10.5
+        self.assertLess(
+            evaluate(self.scenarios, predictions)["metrics"]["constraint_recall"], 1.0
+        )
+
+    def test_repeated_list_entry_still_differs(self) -> None:
+        predictions = self.predictions()
+        arguments = predictions[0]["tool_call"]["arguments"]
+        arguments["cuisines"] = arguments["cuisines"] + ["thai"]
+        self.assertLess(
+            evaluate(self.scenarios, predictions)["metrics"]["constraint_recall"], 1.0
+        )
+
     def test_arguments_do_not_count_for_the_wrong_tool(self) -> None:
         predictions = self.predictions()
         predictions[0]["tool_call"]["name"] = "search_route_chargers"

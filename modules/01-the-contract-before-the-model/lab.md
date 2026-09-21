@@ -33,6 +33,26 @@ correct. Explain why an end-to-end pass/fail would hide this defect.
 
 ## 1.4 Add a clarification case
 
-Add a scenario where a required compatibility fact is missing. Set
-`expected_clarification` to `true`, provide no expected tool call, and write a
-prediction that asks for the missing fact. Add a unit test for the behavior.
+Add a scenario where a required compatibility fact is missing. Every scenario
+needs `id`, `expected_clarification`, and `expected_choice_id`; for this one set
+`expected_clarification` to `true`, `expected_call` to `null`, and
+`expected_choice_id` to `null`. Write a prediction that asks for the missing
+fact, and add a unit test for the behavior.
+
+Check your scenario before scoring it:
+
+```bash
+python3 -c "from benchmark.routepilot_eval import validate_scenario_file; \
+  print(validate_scenario_file('benchmark/scenarios/module-01.jsonl'))"
+```
+
+An empty list means the fixture is sound. Every other line names the file, the
+line, and the scenario it came from. The evaluator runs the same check and
+exits `2` before scoring if anything is wrong, so a malformed fixture can never
+be mistaken for a bad model.
+
+Now make the same scenario harder: give it a candidate list, and write a second
+prediction that skips the question and picks one anyway. Confirm that this
+raises `hard_violation_rate` and lowers both `clarification_accuracy` and
+`selection_accuracy`. A model that guesses a safety-relevant fact must not be
+scored as if it had asked.
