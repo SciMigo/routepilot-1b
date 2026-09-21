@@ -133,21 +133,45 @@ sufficient for a useful action.
 
 ## Measure components, not vibes
 
-Module 1 reports six quantities:
+Module 1 reports seven quantities:
 
 - **schema validity** — the prediction has the required types and shape;
 - **tool accuracy** — the selected tool matches the expected capability;
 - **constraint precision and recall** — the arguments preserve required values
-  without inventing extra ones;
+  without inventing extra ones, and are credited only when they were handed to
+  the tool that consumes them;
 - **clarification accuracy** — the model acts or asks at the right time;
 - **hard-violation rate** — a chosen candidate violates at least one declared
   hard constraint;
 - **selection accuracy** — the chosen candidate matches the deterministic
-  oracle's highest-utility feasible result.
+  oracle's highest-utility feasible result;
+- **selection coverage** — how often the model committed to a choice at all,
+  among the scenarios where the oracle has a feasible answer.
 
 The hard-violation metric has the opposite direction: zero is best. A model may
 have high selection accuracy on easy scenarios while still occasionally
 breaking a hard constraint. That failure must remain visible.
+
+## A metric a silent model can win is not a metric
+
+A scorecard can be gamed by the shape of its own arithmetic, so three rules
+constrain how these numbers are computed.
+
+First, silence earns nothing. A prediction that is missing from the file, or
+that fails the schema check, is scored as incorrect everywhere rather than read
+as a deliberate abstention. Declining to answer is a legitimate product
+behavior, but it is not the same as answering correctly.
+
+Second, a hard violation is charged against whatever candidate the prediction
+named — in every scenario, including one whose correct action was to ask a
+question, and whether or not the rest of the payload validated. Guessing a
+safety-relevant fact instead of asking for it is the failure this module exists
+to make visible; it must not escape through the clarification branch.
+
+Third, no denominator moves when a model emits less. Every rate is divided by a
+count taken from the scenario file. A model that chooses nothing therefore
+reports a zero hard-violation rate — honestly, because it suggested nothing
+unsafe — next to a zero selection coverage that shows why.
 
 ## A candidate model, not a predetermined winner
 

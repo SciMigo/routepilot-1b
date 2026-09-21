@@ -13,6 +13,12 @@ python3 -m benchmark.routepilot_eval.cli \
 Explain why `hard_violation_rate` has the opposite direction from the other
 metrics. Keep the raw JSON result for comparison.
 
+Then run the evaluator against an empty prediction file and compare. Every
+accuracy falls to zero, `hard_violation_rate` stays at `0.0`, and
+`selection_coverage` falls to `0.0`. Explain why a zero hard-violation rate is
+the honest answer for a model that suggested nothing, and which metric is doing
+the work of telling you so.
+
 ## 1.2 Choose an infeasible candidate
 
 Copy the reference predictions and change `ord-asian-stop` to choose
