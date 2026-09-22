@@ -3,30 +3,51 @@
     "url": "https://support.google.com/built-in/answer/16537773?hl=en",
     "title": "Use Gemini in Google Maps in your car",
     "publisher": "Google",
-    "fetched": "2026-09-21"
+    "fetched": "2026-09-21",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
   },
   "google-built-in-vehicle-data": {
     "url": "https://support.google.com/built-in/answer/9941814?hl=en",
     "title": "How Google uses data from your vehicle",
     "publisher": "Google",
-    "fetched": "2026-09-21"
+    "fetched": "2026-09-21",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
   },
   "cerence-callm-edge": {
     "url": "https://www.cerence.com/products/callm-gen-ai-apps",
     "title": "CaLLM and GenAI Apps",
     "publisher": "Cerence",
-    "fetched": "2026-09-21"
+    "fetched": "2026-09-21",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
   },
   "qualia": {
     "url": "https://quadrillion.ai/qualia",
     "title": "Qualia",
     "publisher": "Quadrillion",
-    "fetched": "2026-09-21"
+    "fetched": "2026-09-21",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
   },
   "qwen25-15b-instruct": {
     "url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct",
     "title": "Qwen2.5-1.5B-Instruct model card",
     "publisher": "Qwen",
-    "fetched": "2026-09-21"
+    "fetched": "2026-09-21",
+    "kind": "model",
+    "use": "candidate-base-model",
+    "license": "Apache-2.0",
+    "licenseStatus": "documented",
+    "licenseSource": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct"
   }
 }
