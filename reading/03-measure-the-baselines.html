@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Measure the Baselines — Autonomous Post-Training: Build a 1B In-Car Agent</title>
+<style>
+  :root { --bg:#ffffff; --fg:#1a1a2e; --code-bg:#f4f4f8; --border:#e0e0e8; --accent:#0b6e69; --heading:#16213e; --muted:#5b5b70;
+    /* Code carries its own tokens so tables and admonitions, which also used --code-bg, do not
+       move when the code panels are retuned. --code-bg was #f4f4f8 against a white page: a 3%
+       step, which reads as nothing. This course is 52 Python blocks against 9 plain transcripts, so the panel separates code from prose while the inline colour carries the SDK names -- workflow.execute_activity, ApplicationError, a Workflow id -- that run through every paragraph. */
+    --pre-bg:#eef3f8; --pre-border:#cbdae8;
+    --code-inline-bg:#f0f5fa; --code-inline-fg:#0d5480; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14141f; --fg:#e0e0e8; --code-bg:#1e1e2e; --border:#2a2a4e; --accent:#5cc8bf; --heading:#a8c8f0; --muted:#a0a0b8;
+      /* Darker than the page rather than lighter, so the block reads as inset. #0f131a is this
+         course's own deeper-panel colour from figures/STYLE.md, and is close enough to #0d1117
+         that the GitHub-dark token palette below lands on its designed contrast. */
+      --pre-bg:#0f131a; --pre-border:#3a4656;
+      --code-inline-bg:#1a2130; --code-inline-fg:#9ecbff; }
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family: Georgia, 'Times New Roman', serif; font-size:17px; line-height:1.7; color:var(--fg); background:var(--bg); max-width:80rem; margin:0 auto; padding:2rem 1.5rem; }
+  h1 { font-size:1.8rem; color:var(--heading); margin:0 0 1.5rem; padding-bottom:.5rem; border-bottom:2px solid var(--accent); }
+  h2 { font-size:1.4rem; color:var(--heading); margin:2rem 0 .8rem; }
+  h3 { font-size:1.15rem; color:var(--heading); margin:1.5rem 0 .6rem; }
+  p { margin:.8rem 0; }
+  ul, ol { margin:.8rem 0 .8rem 1.5rem; }
+  li { margin:.3rem 0; }
+  pre { background:var(--pre-bg); border:1px solid var(--pre-border); border-radius:6px; padding:1rem; overflow-x:auto; font-size:.88rem; line-height:1.5; margin:1rem 0; }
+  /* Inline code is a name in a sentence, so colour carries it, with only a faint ground behind.
+     Deliberately not a bordered chip: outlining each name stripes a dense paragraph into rows of
+     buttons and breaks apart when a long name wraps. Set on `code` and undone inside `pre`, where
+     the Pygments spans own the colour and a plain transcript should stay body text. */
+  code { font-family: Menlo, Consolas, 'Courier New', monospace; font-size:.9em; background:var(--code-inline-bg); color:var(--code-inline-fg); padding:.08em .3em; border-radius:4px; }
+  pre code { background:none; color:inherit; padding:0; }
+  a code { color:inherit; text-decoration:underline; }
+  blockquote { border-left:4px solid var(--accent); padding:.5rem 1rem; margin:1rem 0; opacity:.9; }
+  table { border-collapse:collapse; margin:1rem 0; width:100%; font-size:.95rem; }
+  th, td { border:1px solid var(--border); padding:.45rem .6rem; text-align:left; vertical-align:top; }
+  th { background:var(--code-bg); }
+  .admonition { border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:6px; padding:.6rem 1rem; margin:1rem 0; background:var(--code-bg); }
+  .admonition-title { font-weight:bold; color:var(--heading); }
+  .attribution { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border); font-size:.85rem; color:var(--muted); }
+  .attribution h2 { font-size:1rem; margin:0 0 .5rem; }
+  .attribution ul { margin-left:1.2rem; }
+  .attribution a { overflow-wrap:anywhere; }
+  a { color:var(--accent); }
+  .reading-figure{margin:1.4rem 0;text-align:center}.reading-figure svg{max-width:100%;height:auto;display:block;margin:0 auto}.reading-figure.dark svg{background:#10141b;border-radius:14px}.reading-figure figcaption{font-size:.9rem;color:var(--muted);margin-top:.5rem}
+  .figure-pan-hint{display:none}
+  .figure-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .reading-start{display:flex;gap:.7rem;align-items:flex-start;flex-wrap:wrap;margin:0 0 1.5rem;font:600 .85rem/1.4 system-ui,-apple-system,sans-serif}
+  .reading-outline{border:1px solid var(--border);border-radius:8px;background:var(--code-bg);min-width:min(100%,18rem)}
+  .reading-outline summary{cursor:pointer;padding:.65rem .85rem;color:var(--heading)}
+  .reading-outline nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:.2rem .8rem;padding:.2rem .85rem .85rem;max-width:54rem}
+  .reading-outline nav a{font-weight:500;text-decoration:none;padding:.25rem 0}
+  .reading-outline nav a:hover,.reading-outline nav a:focus-visible{text-decoration:underline}
+  .reading-lab-link{display:inline-block;padding:.65rem .85rem;border:1px solid var(--accent);border-radius:8px;text-decoration:none}
+  .reading-lab-link:hover,.reading-lab-link:focus-visible{background:var(--code-bg)}
+  h2[id]{scroll-margin-top:1rem}
+  /* Pygments syntax highlighting (pre-rendered by tools/build_reading.py) */
+  .codehilite pre { margin:0; }
+pre { line-height: 125%; }
+td.linenos .normal { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #ffffcc }
+.codehilite .c { color: #60a0b0; font-style: italic } /* Comment */
+.codehilite .err { border: 1px solid #FF0000 } /* Error */
+.codehilite .k { color: #007020; font-weight: bold } /* Keyword */
+.codehilite .o { color: #666666 } /* Operator */
+.codehilite .ch { color: #60a0b0; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #60a0b0; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #007020 } /* Comment.Preproc */
+.codehilite .cpf { color: #60a0b0; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #60a0b0; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #60a0b0; background-color: #fff0f0 } /* Comment.Special */
+.codehilite .gd { color: #A00000 } /* Generic.Deleted */
+.codehilite .ge { font-style: italic } /* Generic.Emph */
+.codehilite .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #FF0000 } /* Generic.Error */
+.codehilite .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #00A000 } /* Generic.Inserted */
+.codehilite .go { color: #888888 } /* Generic.Output */
+.codehilite .gp { color: #c65d09; font-weight: bold } /* Generic.Prompt */
+.codehilite .gs { font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.codehilite .gt { color: #0044DD } /* Generic.Traceback */
+.codehilite .kc { color: #007020; font-weight: bold } /* Keyword.Constant */
+.codehilite .kd { color: #007020; font-weight: bold } /* Keyword.Declaration */
+.codehilite .kn { color: #007020; font-weight: bold } /* Keyword.Namespace */
+.codehilite .kp { color: #007020 } /* Keyword.Pseudo */
+.codehilite .kr { color: #007020; font-weight: bold } /* Keyword.Reserved */
+.codehilite .kt { color: #902000 } /* Keyword.Type */
+.codehilite .m { color: #40a070 } /* Literal.Number */
+.codehilite .s { color: #4070a0 } /* Literal.String */
+.codehilite .na { color: #4070a0 } /* Name.Attribute */
+.codehilite .nb { color: #007020 } /* Name.Builtin */
+.codehilite .nc { color: #0e84b5; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #60add5 } /* Name.Constant */
+.codehilite .nd { color: #555555; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #d55537; font-weight: bold } /* Name.Entity */
+.codehilite .ne { color: #007020 } /* Name.Exception */
+.codehilite .nf { color: #06287e } /* Name.Function */
+.codehilite .nl { color: #002070; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #0e84b5; font-weight: bold } /* Name.Namespace */
+.codehilite .nt { color: #062873; font-weight: bold } /* Name.Tag */
+.codehilite .nv { color: #bb60d5 } /* Name.Variable */
+.codehilite .ow { color: #007020; font-weight: bold } /* Operator.Word */
+.codehilite .w { color: #bbbbbb } /* Text.Whitespace */
+.codehilite .mb { color: #40a070 } /* Literal.Number.Bin */
+.codehilite .mf { color: #40a070 } /* Literal.Number.Float */
+.codehilite .mh { color: #40a070 } /* Literal.Number.Hex */
+.codehilite .mi { color: #40a070 } /* Literal.Number.Integer */
+.codehilite .mo { color: #40a070 } /* Literal.Number.Oct */
+.codehilite .sa { color: #4070a0 } /* Literal.String.Affix */
+.codehilite .sb { color: #4070a0 } /* Literal.String.Backtick */
+.codehilite .sc { color: #4070a0 } /* Literal.String.Char */
+.codehilite .dl { color: #4070a0 } /* Literal.String.Delimiter */
+.codehilite .sd { color: #4070a0; font-style: italic } /* Literal.String.Doc */
+.codehilite .s2 { color: #4070a0 } /* Literal.String.Double */
+.codehilite .se { color: #4070a0; font-weight: bold } /* Literal.String.Escape */
+.codehilite .sh { color: #4070a0 } /* Literal.String.Heredoc */
+.codehilite .si { color: #70a0d0; font-style: italic } /* Literal.String.Interpol */
+.codehilite .sx { color: #c65d09 } /* Literal.String.Other */
+.codehilite .sr { color: #235388 } /* Literal.String.Regex */
+.codehilite .s1 { color: #4070a0 } /* Literal.String.Single */
+.codehilite .ss { color: #517918 } /* Literal.String.Symbol */
+.codehilite .bp { color: #007020 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #06287e } /* Name.Function.Magic */
+.codehilite .vc { color: #bb60d5 } /* Name.Variable.Class */
+.codehilite .vg { color: #bb60d5 } /* Name.Variable.Global */
+.codehilite .vi { color: #bb60d5 } /* Name.Variable.Instance */
+.codehilite .vm { color: #bb60d5 } /* Name.Variable.Magic */
+.codehilite .il { color: #40a070 } /* Literal.Number.Integer.Long */
+  @media (prefers-color-scheme: dark) {
+  pre { line-height: 125%; }
+  td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+  span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+  td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+  span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+  .codehilite .hll { background-color: #6e7681 }
+  .codehilite .c { color: #8b949e; font-style: italic } /* Comment */
+  .codehilite .err { color: #f85149 } /* Error */
+  .codehilite .esc { color: #e6edf3 } /* Escape */
+  .codehilite .g { color: #e6edf3 } /* Generic */
+  .codehilite .k { color: #ff7b72 } /* Keyword */
+  .codehilite .l { color: #a5d6ff } /* Literal */
+  .codehilite .n { color: #e6edf3 } /* Name */
+  .codehilite .o { color: #ff7b72; font-weight: bold } /* Operator */
+  .codehilite .x { color: #e6edf3 } /* Other */
+  .codehilite .p { color: #e6edf3 } /* Punctuation */
+  .codehilite .ch { color: #8b949e; font-style: italic } /* Comment.Hashbang */
+  .codehilite .cm { color: #8b949e; font-style: italic } /* Comment.Multiline */
+  .codehilite .cp { color: #8b949e; font-weight: bold; font-style: italic } /* Comment.Preproc */
+  .codehilite .cpf { color: #8b949e; font-style: italic } /* Comment.PreprocFile */
+  .codehilite .c1 { color: #8b949e; font-style: italic } /* Comment.Single */
+  .codehilite .cs { color: #8b949e; font-weight: bold; font-style: italic } /* Comment.Special */
+  .codehilite .gd { color: #ffa198; background-color: #490202 } /* Generic.Deleted */
+  .codehilite .ge { color: #e6edf3; font-style: italic } /* Generic.Emph */
+  .codehilite .ges { color: #e6edf3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+  .codehilite .gr { color: #ffa198 } /* Generic.Error */
+  .codehilite .gh { color: #79c0ff; font-weight: bold } /* Generic.Heading */
+  .codehilite .gi { color: #56d364; background-color: #0f5323 } /* Generic.Inserted */
+  .codehilite .go { color: #8b949e } /* Generic.Output */
+  .codehilite .gp { color: #8b949e } /* Generic.Prompt */
+  .codehilite .gs { color: #e6edf3; font-weight: bold } /* Generic.Strong */
+  .codehilite .gu { color: #79c0ff } /* Generic.Subheading */
+  .codehilite .gt { color: #ff7b72 } /* Generic.Traceback */
+  .codehilite .g-Underline { color: #e6edf3; text-decoration: underline } /* Generic.Underline */
+  .codehilite .kc { color: #79c0ff } /* Keyword.Constant */
+  .codehilite .kd { color: #ff7b72 } /* Keyword.Declaration */
+  .codehilite .kn { color: #ff7b72 } /* Keyword.Namespace */
+  .codehilite .kp { color: #79c0ff } /* Keyword.Pseudo */
+  .codehilite .kr { color: #ff7b72 } /* Keyword.Reserved */
+  .codehilite .kt { color: #ff7b72 } /* Keyword.Type */
+  .codehilite .ld { color: #79c0ff } /* Literal.Date */
+  .codehilite .m { color: #a5d6ff } /* Literal.Number */
+  .codehilite .s { color: #a5d6ff } /* Literal.String */
+  .codehilite .na { color: #e6edf3 } /* Name.Attribute */
+  .codehilite .nb { color: #e6edf3 } /* Name.Builtin */
+  .codehilite .nc { color: #f0883e; font-weight: bold } /* Name.Class */
+  .codehilite .no { color: #79c0ff; font-weight: bold } /* Name.Constant */
+  .codehilite .nd { color: #d2a8ff; font-weight: bold } /* Name.Decorator */
+  .codehilite .ni { color: #ffa657 } /* Name.Entity */
+  .codehilite .ne { color: #f0883e; font-weight: bold } /* Name.Exception */
+  .codehilite .nf { color: #d2a8ff; font-weight: bold } /* Name.Function */
+  .codehilite .nl { color: #79c0ff; font-weight: bold } /* Name.Label */
+  .codehilite .nn { color: #ff7b72 } /* Name.Namespace */
+  .codehilite .nx { color: #e6edf3 } /* Name.Other */
+  .codehilite .py { color: #79c0ff } /* Name.Property */
+  .codehilite .nt { color: #7ee787 } /* Name.Tag */
+  .codehilite .nv { color: #79c0ff } /* Name.Variable */
+  .codehilite .ow { color: #ff7b72; font-weight: bold } /* Operator.Word */
+  .codehilite .pm { color: #e6edf3 } /* Punctuation.Marker */
+  .codehilite .w { color: #6e7681 } /* Text.Whitespace */
+  .codehilite .mb { color: #a5d6ff } /* Literal.Number.Bin */
+  .codehilite .mf { color: #a5d6ff } /* Literal.Number.Float */
+  .codehilite .mh { color: #a5d6ff } /* Literal.Number.Hex */
+  .codehilite .mi { color: #a5d6ff } /* Literal.Number.Integer */
+  .codehilite .mo { color: #a5d6ff } /* Literal.Number.Oct */
+  .codehilite .sa { color: #79c0ff } /* Literal.String.Affix */
+  .codehilite .sb { color: #a5d6ff } /* Literal.String.Backtick */
+  .codehilite .sc { color: #a5d6ff } /* Literal.String.Char */
+  .codehilite .dl { color: #79c0ff } /* Literal.String.Delimiter */
+  .codehilite .sd { color: #a5d6ff } /* Literal.String.Doc */
+  .codehilite .s2 { color: #a5d6ff } /* Literal.String.Double */
+  .codehilite .se { color: #79c0ff } /* Literal.String.Escape */
+  .codehilite .sh { color: #79c0ff } /* Literal.String.Heredoc */
+  .codehilite .si { color: #a5d6ff } /* Literal.String.Interpol */
+  .codehilite .sx { color: #a5d6ff } /* Literal.String.Other */
+  .codehilite .sr { color: #79c0ff } /* Literal.String.Regex */
+  .codehilite .s1 { color: #a5d6ff } /* Literal.String.Single */
+  .codehilite .ss { color: #a5d6ff } /* Literal.String.Symbol */
+  .codehilite .bp { color: #e6edf3 } /* Name.Builtin.Pseudo */
+  .codehilite .fm { color: #d2a8ff; font-weight: bold } /* Name.Function.Magic */
+  .codehilite .vc { color: #79c0ff } /* Name.Variable.Class */
+  .codehilite .vg { color: #79c0ff } /* Name.Variable.Global */
+  .codehilite .vi { color: #79c0ff } /* Name.Variable.Instance */
+  .codehilite .vm { color: #79c0ff } /* Name.Variable.Magic */
+  .codehilite .il { color: #a5d6ff } /* Literal.Number.Integer.Long */
+  }
+
+  /* One column, 80rem (1280px): code and prose share the same width, because a code block that
+     bleeds wider than the paragraph above it reads as a layout bug. Wider than the prose optimum
+     on purpose — these pages are mostly commands, event listings and source files, where a
+     scrolled line costs more than a long measure does. */
+  .reading-figure svg { max-width:min(100%, 860px); }
+  @media (max-width:700px) {
+    .figure-pan-hint{display:block;text-align:left;font:600 .78rem/1.4 system-ui,-apple-system,sans-serif;color:var(--muted);margin:0 0 .35rem}
+    .figure-scroll{overflow-x:auto;overscroll-behavior-inline:contain;padding-bottom:.35rem}
+    .figure-scroll svg{width:860px;max-width:none;margin:0}
+    .reading-figure figcaption{text-align:left}
+  }
+  /* A wide table used to push the page sideways on a narrow window; scroll it in place instead. */
+  table { display:block; width:max-content; max-width:100%; overflow-x:auto; }
+  /* Long identifiers in prose (test names, URLs) pushed the page sideways on a phone.
+     Only inline code breaks; inside a pre the block scrolls instead. */
+  p code, li code, td code, summary code { overflow-wrap:anywhere; }
+  /* the highlight wrapper must clip too, or a wide listing pushes the page on a phone */
+  /* overflow-x:auto makes this a scroll container, and CSS cannot pair it with a visible
+     overflow-y -- so it clips vertically too, and the Copy button's negative top was being
+     cut off. The padding gives the button room inside the clip; the inner <pre> still owns
+     the horizontal scrolling. Plain (unhighlighted) blocks have no .codehilite wrapper and
+     were never affected. */
+  .codehilite { overflow-x:auto; max-width:100%; padding-top:.9rem; }
+
+  /* Copy button, added to every <pre> by the script at the end of the page. It sits on a wrapper,
+     not on the <pre>, so it stays in the corner while a wide listing scrolls underneath it. */
+  .copy-wrap { position:relative; }
+  /* Straddling the block's top edge, not sitting inside it: at .45rem down the button covered
+     the first line of any command long enough to reach it. Negative top costs no layout
+     space, which padding the block would have spent on every short block too. */
+  .copy-btn { position:absolute; top:-.8rem; right:.5rem; padding:.3rem .55rem; font:600 .72rem/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing:.02em; color:var(--muted); background:var(--bg); border:1px solid var(--border); border-radius:5px; cursor:pointer; opacity:.8; transition:opacity .15s, color .15s, border-color .15s; }
+  .copy-wrap:hover .copy-btn, .copy-btn:focus-visible, .copy-btn.copied { opacity:1; color:var(--accent); border-color:var(--accent); }
+  .copy-btn:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  /* On a phone the first line of most blocks reaches the corner, so give the button its own strip. */
+  /* The button no longer overlays the block, so no narrow-screen top band is needed. */
+</style>
+</head>
+<body>
+<h1>Measure the Baselines</h1>
+<div class="reading-start"><details class="reading-outline"><summary>On this page</summary><nav aria-label="Sections"><a href="#evaluate-the-application-contract">Evaluate the application contract</a><a href="#freeze-adaptation-before-comparison">Freeze adaptation before comparison</a><a href="#strict-output-is-part-of-the-behavior">Strict output is part of the behavior</a><a href="#preserve-raw-evidence">Preserve raw evidence</a><a href="#run-the-proposed-student-locally">Run the proposed student locally</a><a href="#compare-a-teacher-without-changing-the-test">Compare a teacher without changing the test</a><a href="#read-component-failures-as-hypotheses">Read component failures as hypotheses</a><a href="#decide-whether-training-is-justified">Decide whether training is justified</a><a href="#current-evidence-boundary">Current evidence boundary</a><a href="#sources">Sources</a></nav></details><a class="reading-lab-link" href="https://scimigo.com/en/learn/routepilot-1b/03-measure-the-baselines/lab" target="_blank" rel="noopener">Open the lab ↗</a></div><p>Post-training begins with a comparison, not a training command. Before changing
+weights, we need to know what the proposed student already does, what a stronger
+teacher can do under the same contract, and which failures are important enough
+to justify a data and maintenance program.</p>
+<p>A number without its setup is not a baseline. “The model scored 80%” omits the
+model revision, quantization, prompt, parser, retry policy, sampling settings,
+scenario split, serving stack, and evaluator. RoutePilot stores those choices
+alongside raw requests and responses so later adapter claims can compare like
+with like.</p>
+<h2 id="evaluate-the-application-contract">Evaluate the application contract</h2>
+<p>RoutePilot does two model-facing jobs in one benchmark record. It extracts a
+structured tool request, then ranks simulated candidates that represent the
+tool's current result. The baseline prompt therefore exposes:</p>
+<ul>
+<li>the driver's request;</li>
+<li>permitted application context;</li>
+<li>simulated candidate records.</li>
+</ul>
+<p>It withholds:</p>
+<ul>
+<li>the expected tool call;</li>
+<li>hard-constraint annotations;</li>
+<li>utility weights;</li>
+<li>the oracle's expected choice;</li>
+<li>split and generator metadata.</li>
+</ul>
+<p>Candidates are visible because ranking them is part of the intended behavior.
+Oracle rules are hidden because they are benchmark truth. A unit test checks
+this boundary so a later refactor cannot quietly make the task easier.</p>
+<h2 id="freeze-adaptation-before-comparison">Freeze adaptation before comparison</h2>
+<p>HELM frames evaluation as more than a dataset and model: a scenario is adapted
+to a model through prompting and inference choices, then measured. RoutePilot's
+baseline freezes those choices in <code>routepilot-baseline-v1</code>:</p>
+<ul>
+<li>one system instruction;</li>
+<li>a compact JSON rendering of the public scenario fields;</li>
+<li>temperature zero;</li>
+<li>a fixed output-token cap;</li>
+<li>exact JSON parsing;</li>
+<li>zero retries and zero repairs.</li>
+</ul>
+<p>Temperature zero reduces one source of variation, but it is not a universal
+reproducibility guarantee. Providers can change kernels, model aliases, serving
+stacks, or tie-breaking. Record exact identifiers and provider request IDs when
+available, and treat a rerun as new evidence rather than overwriting an old one.</p>
+<h2 id="strict-output-is-part-of-the-behavior">Strict output is part of the behavior</h2>
+<p>The model must return exactly one object:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"tool_call"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"search_route_stops"</span><span class="p">,</span><span class="w"> </span><span class="nt">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{}},</span>
+<span class="w">  </span><span class="nt">"choice_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"candidate-id"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"clarification"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Markdown fences, leading explanations, extra reasoning keys, and malformed JSON
+fail parsing. The runner does not search for a JSON substring or ask the model
+again. Repair and retries may be sensible product features, but adding them
+changes the system under test. They deserve a separately named run with their
+own latency, cost, and failure behavior.</p>
+<p>A parse failure remains in <code>responses.jsonl</code>. Its corresponding prediction is
+deliberately schema-invalid, so it stays reconciled to the scenario while
+receiving no behavioral credit. Silence or bad packaging cannot improve a rate.</p>
+<h2 id="preserve-raw-evidence">Preserve raw evidence</h2>
+<p>HELM publishes raw prompts and completions as part of transparent evaluation.
+The RoutePilot run contract follows the same principle at course scale. Each run
+contains:</p>
+<ul>
+<li><code>requests.jsonl</code> with the exact messages and prompt version;</li>
+<li><code>responses.jsonl</code> with raw text, usage, latency, errors, and request IDs;</li>
+<li><code>predictions.jsonl</code> with parsed or explicitly invalid predictions;</li>
+<li><code>metrics.json</code> with component scores and reconciliation;</li>
+<li>run, environment, cost, log, and checksum records.</li>
+</ul>
+<p>This structure separates facts from interpretation. A future reader can tell
+whether poor schema validity came from prose wrappers, truncation, endpoint
+errors, or a model that misunderstood the requested object.</p>
+<p>Credentials never belong in this evidence. The CLI reads an API key from a
+named environment variable and records neither its name nor its value in model
+traffic.</p>
+<h2 id="run-the-proposed-student-locally">Run the proposed student locally</h2>
+<p>The proposed student remains Qwen2.5-1.5B-Instruct. Qwen's model card identifies
+the checkpoint and Apache 2.0 license. The MLX community publishes a four-bit
+conversion for Apple Silicon, and MLX-LM exposes an HTTP endpoint similar to the
+OpenAI chat-completions interface.</p>
+<p>MLX-LM warns that its server has only basic security checks and is not
+recommended for production. That is acceptable for a loopback-only course
+experiment; it is not evidence for the eventual vehicle serving architecture.
+Bind and expose local model servers cautiously.</p>
+<p>Quantization is part of the model setup. A score from the four-bit conversion
+is a four-bit baseline, not an unqualified score for every representation of
+Qwen2.5-1.5B-Instruct.</p>
+<h2 id="compare-a-teacher-without-changing-the-test">Compare a teacher without changing the test</h2>
+<p>A teacher establishes a stronger reference and may later help create language
+variation or training targets. It does not receive a friendlier prompt, more
+retries, or hidden benchmark fields. Both models use the same development
+scenarios, prompt version, temperature, token cap, parser, and evaluator.</p>
+<p>Record the exact teacher identifier. A rolling alias is poor experimental
+provenance because the underlying model may change. Record usage, applicable
+price, retention configuration, endpoint, and terms. Permission to call a model
+for evaluation does not automatically permit using its outputs for training or
+redistributing derived weights.</p>
+<h2 id="read-component-failures-as-hypotheses">Read component failures as hypotheses</h2>
+<p>Aggregate selection accuracy is not a data plan. Component failures suggest
+different next actions:</p>
+<ul>
+<li>Low schema validity may call for a better output protocol, constrained
+  decoding, or format examples—not domain training data.</li>
+<li>Wrong tools point to routing examples.</li>
+<li>Low constraint recall points to linguistic coverage around limits and context.</li>
+<li>Hard violations demand protected negative examples and application safeguards.</li>
+<li>Clarification failures need missing-context cases.</li>
+<li>Correct extraction but wrong feasible choice points to ranking evidence.</li>
+</ul>
+<p>These are hypotheses until raw failures are inspected. A single scenario can
+fail multiple components, and a tiny public fixture supports debugging rather
+than a stable quality estimate.</p>
+<h2 id="decide-whether-training-is-justified">Decide whether training is justified</h2>
+<p>Training is warranted only when the base-model defect is repeatable,
+product-relevant, and not more safely handled by deterministic code or a modest
+prompt change. The teacher should demonstrate that the output contract is
+achievable, but matching the teacher is not automatically the objective.</p>
+<p>Before proceeding, write a decision with:</p>
+<ul>
+<li>the target failure family;</li>
+<li>the metric expected to improve;</li>
+<li>a protected metric that may not regress;</li>
+<li>the data source and rights boundary;</li>
+<li>the base and teacher run identifiers;</li>
+<li>the simpler alternatives considered.</li>
+</ul>
+<p>“Do not train” is a valid conclusion. Post-training is a means of changing
+repeatable behavior, not a required ritual in a course bearing its name.</p>
+<h2 id="current-evidence-boundary">Current evidence boundary</h2>
+<p>The repository contains and tests the frozen prompt, strict parser,
+OpenAI-compatible client, and complete run-artifact writer. It does not yet
+contain a real Qwen or teacher run. Until raw directories are committed, all
+quality, latency, usage, and cost outcomes remain unobserved.</p>
+<h2 id="sources">Sources</h2>
+<ul>
+<li>Liang et al., <a href="https://arxiv.org/abs/2211.09110">Holistic Evaluation of Language
+  Models</a>, 2022.</li>
+<li>OpenAI, <a href="https://github.com/openai/evals">Evals</a>.</li>
+<li>Apple MLX team, <a href="https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/SERVER.md">MLX-LM HTTP Model
+  Server</a>.</li>
+<li>Qwen, <a href="https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct">Qwen2.5-1.5B-Instruct</a>.</li>
+<li>MLX Community,
+  <a href="https://huggingface.co/mlx-community/Qwen2.5-1.5B-Instruct-4bit">Qwen2.5-1.5B-Instruct-4bit</a>.</li>
+</ul><p class="lab-link"><strong>Lab:</strong> <a href="https://scimigo.com/en/learn/routepilot-1b/03-measure-the-baselines/lab" target="_blank" rel="noopener">Open the lab</a> — exercises you run against the benchmark on your own machine.</p>
+
+<script>
+/* A Copy button on every code block.
+   These pages are shown inside the course viewer's cross-origin iframe, where Chromium refuses
+   navigator.clipboard unless the embedding page grants clipboard-write. So: try the Clipboard API,
+   fall back to execCommand('copy'), and if both are refused, select the block so Ctrl/Cmd-C works
+   and say so. The label reads "Copied" only when a copy actually succeeded. */
+(function () {
+  function execCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function show(btn, label, copied) {
+    btn.textContent = label;
+    btn.classList.toggle('copied', copied);
+    clearTimeout(btn._reset);
+    btn._reset = setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+  }
+  var mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  Array.prototype.forEach.call(document.querySelectorAll('pre'), function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'copy-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.setAttribute('aria-label', 'Copy code to clipboard');
+    btn.addEventListener('click', function () {
+      var src = pre.querySelector('code') || pre;
+      var text = src.textContent.replace(/\n$/, '');
+      function fallback() {
+        if (execCopy(text)) return show(btn, 'Copied', true);
+        var range = document.createRange();
+        range.selectNodeContents(src);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        show(btn, mac ? 'Press ⌘C' : 'Press Ctrl+C', false);
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () { show(btn, 'Copied', true); }, fallback);
+      } else {
+        fallback();
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>
