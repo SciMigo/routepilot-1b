@@ -49,5 +49,105 @@
     "license": "Apache-2.0",
     "licenseStatus": "documented",
     "licenseSource": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct"
+  },
+  "self-instruct": {
+    "url": "https://arxiv.org/abs/2212.10560",
+    "title": "Self-Instruct: Aligning Language Models with Self-Generated Instructions",
+    "publisher": "ACL Anthology / arXiv",
+    "fetched": "2026-09-23",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
+  },
+  "wizardlm-evol-instruct": {
+    "url": "https://arxiv.org/abs/2304.12244",
+    "title": "WizardLM: Empowering Large Language Models to Follow Complex Instructions",
+    "publisher": "ICLR / arXiv",
+    "fetched": "2026-09-23",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
+  },
+  "benchmark-contamination-survey": {
+    "url": "https://arxiv.org/abs/2406.04244",
+    "title": "Benchmark Data Contamination of Large Language Models: A Survey",
+    "publisher": "arXiv",
+    "fetched": "2026-09-23",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
+  },
+  "helm": {
+    "url": "https://arxiv.org/abs/2211.09110",
+    "title": "Holistic Evaluation of Language Models",
+    "publisher": "Stanford CRFM / arXiv",
+    "fetched": "2026-09-23",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
+  },
+  "openai-evals": {
+    "url": "https://github.com/openai/evals",
+    "title": "OpenAI Evals",
+    "publisher": "OpenAI",
+    "fetched": "2026-09-23",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
+  },
+  "mlx-lm-server": {
+    "url": "https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/SERVER.md",
+    "title": "MLX-LM HTTP Model Server",
+    "publisher": "Apple MLX team",
+    "fetched": "2026-09-23",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
+  },
+  "mlx-qwen25-15b-instruct-4bit": {
+    "url": "https://huggingface.co/mlx-community/Qwen2.5-1.5B-Instruct-4bit",
+    "title": "Qwen2.5-1.5B-Instruct-4bit",
+    "publisher": "MLX Community",
+    "fetched": "2026-09-23",
+    "kind": "model",
+    "use": "local-baseline-inference",
+    "license": null,
+    "licenseStatus": "unverified"
+  },
+  "shortgpt": {
+    "url": "https://arxiv.org/abs/2403.03853",
+    "title": "ShortGPT: Layers in Large Language Models are More Redundant Than You Expect",
+    "publisher": "arXiv",
+    "fetched": "2026-09-23",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
+  },
+  "sheared-llama": {
+    "url": "https://arxiv.org/abs/2310.06694",
+    "title": "Sheared LLaMA: Accelerating Language Model Pre-training via Structured Pruning",
+    "publisher": "arXiv",
+    "fetched": "2026-09-23",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
+  },
+  "minitron": {
+    "url": "https://arxiv.org/abs/2407.14679",
+    "title": "Compact Language Models via Pruning and Knowledge Distillation",
+    "publisher": "arXiv",
+    "fetched": "2026-09-23",
+    "kind": "reference",
+    "use": "paraphrase-and-link",
+    "license": null,
+    "licenseStatus": "unverified"
   }
 }

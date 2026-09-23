@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "title": "Autonomous Post-Training: Build a 1B In-Car Agent",
   "subtitle": "From a driver request to a measurable, tool-using edge model",
-  "description": "Build RoutePilot, a 1B-class route-aware agent that extracts constraints, calls a maps or POI tool, ranks returned candidates, and proposes a safe next action. The course starts with a deterministic behavioral contract, then moves through licensed synthetic data, baselines, post-training, failure-driven iteration, quantization, and publication.",
+  "description": "Build RoutePilot, a 1B-class route-aware agent that extracts constraints, calls a maps or POI tool, ranks returned candidates, and proposes a safe next action. The course starts with a deterministic behavioral contract, then moves through licensed synthetic data, baselines, post-training, failure-driven iteration, structural pruning with recovery training, quantization, and publication.",
   "overview": "A useful in-car language model should not memorize restaurants, opening hours, traffic, or charger availability. Those facts change. RoutePilot learns the stable part of the job: understand the request, convert it into explicit constraints, select a tool, reason over current results, and explain a proposed action.\n\nThe course treats post-training as an experimental system. Every model iteration is evaluated against deterministic hard constraints and ranking utilities. Failures become categorized evidence for the next data pass. No accuracy, latency, or deployment claim is made until a reproducible run is committed.",
   "locale": "en",
   "branding": {
@@ -20,7 +20,7 @@
     "Generate licensed training scenarios whose labels follow explicit constraints",
     "Post-train and compare a 1B-class student against teacher and base-model baselines",
     "Diagnose hard-constraint, tool-call, ranking, and clarification failures separately",
-    "Quantize and measure the student on named edge hardware",
+    "Compare an adapted student with structurally pruned, recovered, and quantized variants on named edge hardware",
     "Publish a model card, data card, benchmark, and integration boundary without overstating results"
   ],
   "sourceAttribution": "Course design and benchmark are original to SciMigo. Product and model claims are paraphrased from linked primary sources fetched 2026-09-21. Google, Cerence, Quadrillion, Qwen, and Hugging Face are trademarks of their respective owners; this independent course is not endorsed by them.",
@@ -31,8 +31,12 @@
     {"classic": "Oracle", "routepilot": "deterministic code that applies the declared constraints and utility weights"},
     {"classic": "Agent action", "routepilot": "a proposal that still requires application policy and, when appropriate, driver confirmation"}
   ],
-  "modules": ["01-the-contract-before-the-model"],
-  "estimatedTotalHours": 1.5,
+  "modules": [
+    "01-the-contract-before-the-model",
+    "02-generate-scenarios-not-answers",
+    "03-measure-the-baselines"
+  ],
+  "estimatedTotalHours": 6,
   "recurringExamples": [
     "Airport arrival: choose a quick cuisine-matching stop without violating detour or arrival limits.",
     "EV charging: find a compatible, available charger without inventing live availability.",

@@ -11,6 +11,56 @@ The Module 1 fixture is deliberately small enough to audit by hand. It tests
 the evaluator and contract, not model quality. Later releases should add held-
 out cases without silently editing these fixtures.
 
+## Module 2 scenario generation
+
+`benchmark.routepilot_data` creates contexts, candidates, hard constraints, and
+utility weights before rendering request text. It derives every
+`expected_choice_id` by executing the oracle; the generator never accepts a
+teacher-authored label.
+
+Reproduce the committed fixture:
+
+```bash
+python3 -m benchmark.routepilot_data.cli \
+  --seed 20260923 \
+  --count-per-family 2 \
+  --output /tmp/routepilot-module-02.jsonl
+
+cmp benchmark/scenarios/module-02.jsonl /tmp/routepilot-module-02.jsonl
+```
+
+The eight rows are a generator scaffold, not a training dataset. Entire
+`template_family` values are assigned to either `train` or `development`; a
+family cannot cross the boundary merely because its rows have different names
+or numbers. The private final holdout is not generated or committed here.
+
+## Module 3 baseline runs
+
+`benchmark.routepilot_baselines` sends a frozen prompt to any compatible
+chat-completions endpoint. It exposes only the request, application context,
+and simulated candidates—not constraints, utility weights, expected calls, or
+oracle choices. Responses are parsed as exact, unfenced JSON with no retries or
+repairs.
+
+Start the local model server as described in the Module 3 lab, then run:
+
+```bash
+python3 -m benchmark.routepilot_baselines.cli \
+  --scenarios benchmark/scenarios/module-02.jsonl \
+  --split development \
+  --output-dir runs/qwen25-15b-base \
+  --run-id qwen25-15b-base \
+  --provider-name mlx-local \
+  --base-url http://127.0.0.1:8080/v1 \
+  --model mlx-community/Qwen2.5-1.5B-Instruct-4bit
+```
+
+The output directory is new for every run and contains exact requests, raw
+responses, parsed predictions, component metrics, environment details, usage,
+run metadata, a log, and checksums. Provider errors and parsing failures remain
+in the evidence and receive no behavioral credit. The repository intentionally
+does not ship invented base- or teacher-model scores.
+
 ## Where every constraint came from
 
 Auditing by hand only works if a reader can trace each constraint to something.

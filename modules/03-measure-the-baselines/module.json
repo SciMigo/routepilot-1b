@@ -1,0 +1,45 @@
+{
+  "id": "03-measure-the-baselines",
+  "title": "Measure the Baselines",
+  "subtitle": "Freeze the prompt, preserve every raw response, and decide whether training is justified",
+  "description": "Run the same RoutePilot development scenarios through an unmodified 1B-class student and a named teacher. Record prompts, raw responses, parsing failures, usage, costs, and component metrics so a later post-training claim compares like with like.",
+  "estimatedMinutes": 150,
+  "prerequisites": [
+    "01-the-contract-before-the-model",
+    "02-generate-scenarios-not-answers"
+  ],
+  "reading": "reading/03-measure-the-baselines.md",
+  "generation": {
+    "minSlides": 11,
+    "maxSlides": 15,
+    "targetSeconds": 540,
+    "preset": "engineering_course",
+    "referenceFiles": [
+      "reading/03-measure-the-baselines.md",
+      "benchmark/routepilot_baselines/prompt.py",
+      "benchmark/routepilot_baselines/runner.py"
+    ],
+    "diagramTemplates": [
+      "flow_diagram",
+      "comparison",
+      "scorecard"
+    ],
+    "interactionCheckpoints": 2,
+    "enableFragments": true,
+    "enableImages": false,
+    "imageStyle": "clean experiment and evaluation diagrams, high contrast, teal accent, no decorative robot imagery",
+    "pyodideEnabled": false
+  },
+  "lab": {
+    "title": "Lab 3: run comparable base and teacher baselines",
+    "engine": "local-python",
+    "exercises": [
+      "3.1",
+      "3.2",
+      "3.3",
+      "3.4",
+      "3.5"
+    ],
+    "path": "benchmark"
+  }
+}

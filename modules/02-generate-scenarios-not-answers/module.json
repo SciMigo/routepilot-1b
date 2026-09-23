@@ -1,0 +1,41 @@
+{
+  "id": "02-generate-scenarios-not-answers",
+  "title": "Generate Scenarios, Not Answers",
+  "subtitle": "Create structured worlds, derive labels with code, and keep template families out of both sides of a split",
+  "description": "Build a deterministic scenario factory for RoutePilot. Generate contexts and candidates first, derive every expected choice with the oracle, separate template families across train and development, and allow language models to vary wording only after structured truth exists.",
+  "estimatedMinutes": 120,
+  "prerequisites": ["01-the-contract-before-the-model"],
+  "reading": "reading/02-generate-scenarios-not-answers.md",
+  "generation": {
+    "minSlides": 11,
+    "maxSlides": 15,
+    "targetSeconds": 540,
+    "preset": "engineering_course",
+    "referenceFiles": [
+      "reading/02-generate-scenarios-not-answers.md",
+      "benchmark/routepilot_data/generator.py"
+    ],
+    "diagramTemplates": [
+      "flow_diagram",
+      "comparison",
+      "scorecard"
+    ],
+    "interactionCheckpoints": 2,
+    "enableFragments": true,
+    "enableImages": false,
+    "imageStyle": "clean data-pipeline diagrams, high contrast, teal accent, no decorative automotive photography",
+    "pyodideEnabled": true
+  },
+  "lab": {
+    "title": "Lab 2: build a deterministic scenario factory",
+    "engine": "pyodide",
+    "exercises": [
+      "2.1",
+      "2.2",
+      "2.3",
+      "2.4",
+      "2.5"
+    ],
+    "path": "benchmark"
+  }
+}
