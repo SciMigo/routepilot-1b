@@ -1,0 +1,4 @@
+# Pinned so a rebuild of the committed reading/*.html is a no-op. The Pygments
+# version decides how highlighted strings are escaped, so it changes every page.
+Markdown==3.10.3
+Pygments==2.21.0

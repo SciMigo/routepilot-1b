@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generate Scenarios, Not Answers — Autonomous Post-Training: Build a 1B In-Car Agent</title>
+<style>
+  :root { --bg:#ffffff; --fg:#1a1a2e; --code-bg:#f4f4f8; --border:#e0e0e8; --accent:#0b6e69; --heading:#16213e; --muted:#5b5b70;
+    /* Code carries its own tokens so tables and admonitions, which also used --code-bg, do not
+       move when the code panels are retuned. --code-bg was #f4f4f8 against a white page: a 3%
+       step, which reads as nothing. This course is 52 Python blocks against 9 plain transcripts, so the panel separates code from prose while the inline colour carries the SDK names -- workflow.execute_activity, ApplicationError, a Workflow id -- that run through every paragraph. */
+    --pre-bg:#eef3f8; --pre-border:#cbdae8;
+    --code-inline-bg:#f0f5fa; --code-inline-fg:#0d5480; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14141f; --fg:#e0e0e8; --code-bg:#1e1e2e; --border:#2a2a4e; --accent:#5cc8bf; --heading:#a8c8f0; --muted:#a0a0b8;
+      /* Darker than the page rather than lighter, so the block reads as inset. #0f131a is this
+         course's own deeper-panel colour from figures/STYLE.md, and is close enough to #0d1117
+         that the GitHub-dark token palette below lands on its designed contrast. */
+      --pre-bg:#0f131a; --pre-border:#3a4656;
+      --code-inline-bg:#1a2130; --code-inline-fg:#9ecbff; }
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family: Georgia, 'Times New Roman', serif; font-size:17px; line-height:1.7; color:var(--fg); background:var(--bg); max-width:80rem; margin:0 auto; padding:2rem 1.5rem; }
+  h1 { font-size:1.8rem; color:var(--heading); margin:0 0 1.5rem; padding-bottom:.5rem; border-bottom:2px solid var(--accent); }
+  h2 { font-size:1.4rem; color:var(--heading); margin:2rem 0 .8rem; }
+  h3 { font-size:1.15rem; color:var(--heading); margin:1.5rem 0 .6rem; }
+  p { margin:.8rem 0; }
+  ul, ol { margin:.8rem 0 .8rem 1.5rem; }
+  li { margin:.3rem 0; }
+  pre { background:var(--pre-bg); border:1px solid var(--pre-border); border-radius:6px; padding:1rem; overflow-x:auto; font-size:.88rem; line-height:1.5; margin:1rem 0; }
+  /* Inline code is a name in a sentence, so colour carries it, with only a faint ground behind.
+     Deliberately not a bordered chip: outlining each name stripes a dense paragraph into rows of
+     buttons and breaks apart when a long name wraps. Set on `code` and undone inside `pre`, where
+     the Pygments spans own the colour and a plain transcript should stay body text. */
+  code { font-family: Menlo, Consolas, 'Courier New', monospace; font-size:.9em; background:var(--code-inline-bg); color:var(--code-inline-fg); padding:.08em .3em; border-radius:4px; }
+  pre code { background:none; color:inherit; padding:0; }
+  a code { color:inherit; text-decoration:underline; }
+  blockquote { border-left:4px solid var(--accent); padding:.5rem 1rem; margin:1rem 0; opacity:.9; }
+  table { border-collapse:collapse; margin:1rem 0; width:100%; font-size:.95rem; }
+  th, td { border:1px solid var(--border); padding:.45rem .6rem; text-align:left; vertical-align:top; }
+  th { background:var(--code-bg); }
+  .admonition { border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:6px; padding:.6rem 1rem; margin:1rem 0; background:var(--code-bg); }
+  .admonition-title { font-weight:bold; color:var(--heading); }
+  .attribution { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border); font-size:.85rem; color:var(--muted); }
+  .attribution h2 { font-size:1rem; margin:0 0 .5rem; }
+  .attribution ul { margin-left:1.2rem; }
+  .attribution a { overflow-wrap:anywhere; }
+  a { color:var(--accent); }
+  .reading-figure{margin:1.4rem 0;text-align:center}.reading-figure svg{max-width:100%;height:auto;display:block;margin:0 auto}.reading-figure.dark svg{background:#10141b;border-radius:14px}.reading-figure figcaption{font-size:.9rem;color:var(--muted);margin-top:.5rem}
+  .figure-pan-hint{display:none}
+  .figure-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .reading-start{display:flex;gap:.7rem;align-items:flex-start;flex-wrap:wrap;margin:0 0 1.5rem;font:600 .85rem/1.4 system-ui,-apple-system,sans-serif}
+  .reading-outline{border:1px solid var(--border);border-radius:8px;background:var(--code-bg);min-width:min(100%,18rem)}
+  .reading-outline summary{cursor:pointer;padding:.65rem .85rem;color:var(--heading)}
+  .reading-outline nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:.2rem .8rem;padding:.2rem .85rem .85rem;max-width:54rem}
+  .reading-outline nav a{font-weight:500;text-decoration:none;padding:.25rem 0}
+  .reading-outline nav a:hover,.reading-outline nav a:focus-visible{text-decoration:underline}
+  .reading-lab-link{display:inline-block;padding:.65rem .85rem;border:1px solid var(--accent);border-radius:8px;text-decoration:none}
+  .reading-lab-link:hover,.reading-lab-link:focus-visible{background:var(--code-bg)}
+  h2[id]{scroll-margin-top:1rem}
+  /* Pygments syntax highlighting (pre-rendered by tools/build_reading.py) */
+  .codehilite pre { margin:0; }
+pre { line-height: 125%; }
+td.linenos .normal { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #ffffcc }
+.codehilite .c { color: #60a0b0; font-style: italic } /* Comment */
+.codehilite .err { border: 1px solid #FF0000 } /* Error */
+.codehilite .k { color: #007020; font-weight: bold } /* Keyword */
+.codehilite .o { color: #666666 } /* Operator */
+.codehilite .ch { color: #60a0b0; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #60a0b0; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #007020 } /* Comment.Preproc */
+.codehilite .cpf { color: #60a0b0; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #60a0b0; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #60a0b0; background-color: #fff0f0 } /* Comment.Special */
+.codehilite .gd { color: #A00000 } /* Generic.Deleted */
+.codehilite .ge { font-style: italic } /* Generic.Emph */
+.codehilite .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #FF0000 } /* Generic.Error */
+.codehilite .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #00A000 } /* Generic.Inserted */
+.codehilite .go { color: #888888 } /* Generic.Output */
+.codehilite .gp { color: #c65d09; font-weight: bold } /* Generic.Prompt */
+.codehilite .gs { font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.codehilite .gt { color: #0044DD } /* Generic.Traceback */
+.codehilite .kc { color: #007020; font-weight: bold } /* Keyword.Constant */
+.codehilite .kd { color: #007020; font-weight: bold } /* Keyword.Declaration */
+.codehilite .kn { color: #007020; font-weight: bold } /* Keyword.Namespace */
+.codehilite .kp { color: #007020 } /* Keyword.Pseudo */
+.codehilite .kr { color: #007020; font-weight: bold } /* Keyword.Reserved */
+.codehilite .kt { color: #902000 } /* Keyword.Type */
+.codehilite .m { color: #40a070 } /* Literal.Number */
+.codehilite .s { color: #4070a0 } /* Literal.String */
+.codehilite .na { color: #4070a0 } /* Name.Attribute */
+.codehilite .nb { color: #007020 } /* Name.Builtin */
+.codehilite .nc { color: #0e84b5; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #60add5 } /* Name.Constant */
+.codehilite .nd { color: #555555; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #d55537; font-weight: bold } /* Name.Entity */
+.codehilite .ne { color: #007020 } /* Name.Exception */
+.codehilite .nf { color: #06287e } /* Name.Function */
+.codehilite .nl { color: #002070; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #0e84b5; font-weight: bold } /* Name.Namespace */
+.codehilite .nt { color: #062873; font-weight: bold } /* Name.Tag */
+.codehilite .nv { color: #bb60d5 } /* Name.Variable */
+.codehilite .ow { color: #007020; font-weight: bold } /* Operator.Word */
+.codehilite .w { color: #bbbbbb } /* Text.Whitespace */
+.codehilite .mb { color: #40a070 } /* Literal.Number.Bin */
+.codehilite .mf { color: #40a070 } /* Literal.Number.Float */
+.codehilite .mh { color: #40a070 } /* Literal.Number.Hex */
+.codehilite .mi { color: #40a070 } /* Literal.Number.Integer */
+.codehilite .mo { color: #40a070 } /* Literal.Number.Oct */
+.codehilite .sa { color: #4070a0 } /* Literal.String.Affix */
+.codehilite .sb { color: #4070a0 } /* Literal.String.Backtick */
+.codehilite .sc { color: #4070a0 } /* Literal.String.Char */
+.codehilite .dl { color: #4070a0 } /* Literal.String.Delimiter */
+.codehilite .sd { color: #4070a0; font-style: italic } /* Literal.String.Doc */
+.codehilite .s2 { color: #4070a0 } /* Literal.String.Double */
+.codehilite .se { color: #4070a0; font-weight: bold } /* Literal.String.Escape */
+.codehilite .sh { color: #4070a0 } /* Literal.String.Heredoc */
+.codehilite .si { color: #70a0d0; font-style: italic } /* Literal.String.Interpol */
+.codehilite .sx { color: #c65d09 } /* Literal.String.Other */
+.codehilite .sr { color: #235388 } /* Literal.String.Regex */
+.codehilite .s1 { color: #4070a0 } /* Literal.String.Single */
+.codehilite .ss { color: #517918 } /* Literal.String.Symbol */
+.codehilite .bp { color: #007020 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #06287e } /* Name.Function.Magic */
+.codehilite .vc { color: #bb60d5 } /* Name.Variable.Class */
+.codehilite .vg { color: #bb60d5 } /* Name.Variable.Global */
+.codehilite .vi { color: #bb60d5 } /* Name.Variable.Instance */
+.codehilite .vm { color: #bb60d5 } /* Name.Variable.Magic */
+.codehilite .il { color: #40a070 } /* Literal.Number.Integer.Long */
+  @media (prefers-color-scheme: dark) {
+  pre { line-height: 125%; }
+  td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+  span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+  td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+  span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+  .codehilite .hll { background-color: #6e7681 }
+  .codehilite .c { color: #8b949e; font-style: italic } /* Comment */
+  .codehilite .err { color: #f85149 } /* Error */
+  .codehilite .esc { color: #e6edf3 } /* Escape */
+  .codehilite .g { color: #e6edf3 } /* Generic */
+  .codehilite .k { color: #ff7b72 } /* Keyword */
+  .codehilite .l { color: #a5d6ff } /* Literal */
+  .codehilite .n { color: #e6edf3 } /* Name */
+  .codehilite .o { color: #ff7b72; font-weight: bold } /* Operator */
+  .codehilite .x { color: #e6edf3 } /* Other */
+  .codehilite .p { color: #e6edf3 } /* Punctuation */
+  .codehilite .ch { color: #8b949e; font-style: italic } /* Comment.Hashbang */
+  .codehilite .cm { color: #8b949e; font-style: italic } /* Comment.Multiline */
+  .codehilite .cp { color: #8b949e; font-weight: bold; font-style: italic } /* Comment.Preproc */
+  .codehilite .cpf { color: #8b949e; font-style: italic } /* Comment.PreprocFile */
+  .codehilite .c1 { color: #8b949e; font-style: italic } /* Comment.Single */
+  .codehilite .cs { color: #8b949e; font-weight: bold; font-style: italic } /* Comment.Special */
+  .codehilite .gd { color: #ffa198; background-color: #490202 } /* Generic.Deleted */
+  .codehilite .ge { color: #e6edf3; font-style: italic } /* Generic.Emph */
+  .codehilite .ges { color: #e6edf3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+  .codehilite .gr { color: #ffa198 } /* Generic.Error */
+  .codehilite .gh { color: #79c0ff; font-weight: bold } /* Generic.Heading */
+  .codehilite .gi { color: #56d364; background-color: #0f5323 } /* Generic.Inserted */
+  .codehilite .go { color: #8b949e } /* Generic.Output */
+  .codehilite .gp { color: #8b949e } /* Generic.Prompt */
+  .codehilite .gs { color: #e6edf3; font-weight: bold } /* Generic.Strong */
+  .codehilite .gu { color: #79c0ff } /* Generic.Subheading */
+  .codehilite .gt { color: #ff7b72 } /* Generic.Traceback */
+  .codehilite .g-Underline { color: #e6edf3; text-decoration: underline } /* Generic.Underline */
+  .codehilite .kc { color: #79c0ff } /* Keyword.Constant */
+  .codehilite .kd { color: #ff7b72 } /* Keyword.Declaration */
+  .codehilite .kn { color: #ff7b72 } /* Keyword.Namespace */
+  .codehilite .kp { color: #79c0ff } /* Keyword.Pseudo */
+  .codehilite .kr { color: #ff7b72 } /* Keyword.Reserved */
+  .codehilite .kt { color: #ff7b72 } /* Keyword.Type */
+  .codehilite .ld { color: #79c0ff } /* Literal.Date */
+  .codehilite .m { color: #a5d6ff } /* Literal.Number */
+  .codehilite .s { color: #a5d6ff } /* Literal.String */
+  .codehilite .na { color: #e6edf3 } /* Name.Attribute */
+  .codehilite .nb { color: #e6edf3 } /* Name.Builtin */
+  .codehilite .nc { color: #f0883e; font-weight: bold } /* Name.Class */
+  .codehilite .no { color: #79c0ff; font-weight: bold } /* Name.Constant */
+  .codehilite .nd { color: #d2a8ff; font-weight: bold } /* Name.Decorator */
+  .codehilite .ni { color: #ffa657 } /* Name.Entity */
+  .codehilite .ne { color: #f0883e; font-weight: bold } /* Name.Exception */
+  .codehilite .nf { color: #d2a8ff; font-weight: bold } /* Name.Function */
+  .codehilite .nl { color: #79c0ff; font-weight: bold } /* Name.Label */
+  .codehilite .nn { color: #ff7b72 } /* Name.Namespace */
+  .codehilite .nx { color: #e6edf3 } /* Name.Other */
+  .codehilite .py { color: #79c0ff } /* Name.Property */
+  .codehilite .nt { color: #7ee787 } /* Name.Tag */
+  .codehilite .nv { color: #79c0ff } /* Name.Variable */
+  .codehilite .ow { color: #ff7b72; font-weight: bold } /* Operator.Word */
+  .codehilite .pm { color: #e6edf3 } /* Punctuation.Marker */
+  .codehilite .w { color: #6e7681 } /* Text.Whitespace */
+  .codehilite .mb { color: #a5d6ff } /* Literal.Number.Bin */
+  .codehilite .mf { color: #a5d6ff } /* Literal.Number.Float */
+  .codehilite .mh { color: #a5d6ff } /* Literal.Number.Hex */
+  .codehilite .mi { color: #a5d6ff } /* Literal.Number.Integer */
+  .codehilite .mo { color: #a5d6ff } /* Literal.Number.Oct */
+  .codehilite .sa { color: #79c0ff } /* Literal.String.Affix */
+  .codehilite .sb { color: #a5d6ff } /* Literal.String.Backtick */
+  .codehilite .sc { color: #a5d6ff } /* Literal.String.Char */
+  .codehilite .dl { color: #79c0ff } /* Literal.String.Delimiter */
+  .codehilite .sd { color: #a5d6ff } /* Literal.String.Doc */
+  .codehilite .s2 { color: #a5d6ff } /* Literal.String.Double */
+  .codehilite .se { color: #79c0ff } /* Literal.String.Escape */
+  .codehilite .sh { color: #79c0ff } /* Literal.String.Heredoc */
+  .codehilite .si { color: #a5d6ff } /* Literal.String.Interpol */
+  .codehilite .sx { color: #a5d6ff } /* Literal.String.Other */
+  .codehilite .sr { color: #79c0ff } /* Literal.String.Regex */
+  .codehilite .s1 { color: #a5d6ff } /* Literal.String.Single */
+  .codehilite .ss { color: #a5d6ff } /* Literal.String.Symbol */
+  .codehilite .bp { color: #e6edf3 } /* Name.Builtin.Pseudo */
+  .codehilite .fm { color: #d2a8ff; font-weight: bold } /* Name.Function.Magic */
+  .codehilite .vc { color: #79c0ff } /* Name.Variable.Class */
+  .codehilite .vg { color: #79c0ff } /* Name.Variable.Global */
+  .codehilite .vi { color: #79c0ff } /* Name.Variable.Instance */
+  .codehilite .vm { color: #79c0ff } /* Name.Variable.Magic */
+  .codehilite .il { color: #a5d6ff } /* Literal.Number.Integer.Long */
+  }
+
+  /* One column, 80rem (1280px): code and prose share the same width, because a code block that
+     bleeds wider than the paragraph above it reads as a layout bug. Wider than the prose optimum
+     on purpose — these pages are mostly commands, event listings and source files, where a
+     scrolled line costs more than a long measure does. */
+  .reading-figure svg { max-width:min(100%, 860px); }
+  @media (max-width:700px) {
+    .figure-pan-hint{display:block;text-align:left;font:600 .78rem/1.4 system-ui,-apple-system,sans-serif;color:var(--muted);margin:0 0 .35rem}
+    .figure-scroll{overflow-x:auto;overscroll-behavior-inline:contain;padding-bottom:.35rem}
+    .figure-scroll svg{width:860px;max-width:none;margin:0}
+    .reading-figure figcaption{text-align:left}
+  }
+  /* A wide table used to push the page sideways on a narrow window; scroll it in place instead. */
+  table { display:block; width:max-content; max-width:100%; overflow-x:auto; }
+  /* Long identifiers in prose (test names, URLs) pushed the page sideways on a phone.
+     Only inline code breaks; inside a pre the block scrolls instead. */
+  p code, li code, td code, summary code { overflow-wrap:anywhere; }
+  /* the highlight wrapper must clip too, or a wide listing pushes the page on a phone */
+  /* overflow-x:auto makes this a scroll container, and CSS cannot pair it with a visible
+     overflow-y -- so it clips vertically too, and the Copy button's negative top was being
+     cut off. The padding gives the button room inside the clip; the inner <pre> still owns
+     the horizontal scrolling. Plain (unhighlighted) blocks have no .codehilite wrapper and
+     were never affected. */
+  .codehilite { overflow-x:auto; max-width:100%; padding-top:.9rem; }
+
+  /* Copy button, added to every <pre> by the script at the end of the page. It sits on a wrapper,
+     not on the <pre>, so it stays in the corner while a wide listing scrolls underneath it. */
+  .copy-wrap { position:relative; }
+  /* Straddling the block's top edge, not sitting inside it: at .45rem down the button covered
+     the first line of any command long enough to reach it. Negative top costs no layout
+     space, which padding the block would have spent on every short block too. */
+  .copy-btn { position:absolute; top:-.8rem; right:.5rem; padding:.3rem .55rem; font:600 .72rem/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing:.02em; color:var(--muted); background:var(--bg); border:1px solid var(--border); border-radius:5px; cursor:pointer; opacity:.8; transition:opacity .15s, color .15s, border-color .15s; }
+  .copy-wrap:hover .copy-btn, .copy-btn:focus-visible, .copy-btn.copied { opacity:1; color:var(--accent); border-color:var(--accent); }
+  .copy-btn:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  /* On a phone the first line of most blocks reaches the corner, so give the button its own strip. */
+  /* The button no longer overlays the block, so no narrow-screen top band is needed. */
+</style>
+</head>
+<body>
+<h1>Generate Scenarios, Not Answers</h1>
+<div class="reading-start"><details class="reading-outline"><summary>On this page</summary><nav aria-label="Sections"><a href="#truth-before-text">Truth before text</a><a href="#generate-candidates-that-test-the-contract">Generate candidates that test the contract</a><a href="#reproducibility-is-not-coverage">Reproducibility is not coverage</a><a href="#split-the-generator-not-its-output-rows">Split the generator, not its output rows</a><a href="#use-a-teacher-for-language-not-truth">Use a teacher for language, not truth</a><a href="#contamination-begins-in-your-own-pipeline">Contamination begins in your own pipeline</a><a href="#the-module-2-artifact">The Module 2 artifact</a><a href="#what-comes-next">What comes next</a><a href="#sources">Sources</a></nav></details><a class="reading-lab-link" href="https://scimigo.com/en/learn/routepilot-1b/02-generate-scenarios-not-answers/lab" target="_blank" rel="noopener">Open the lab ↗</a></div><p>The first module froze what RoutePilot is allowed to do. That contract gives us
+an unusual advantage when constructing training data: much of the answer is
+executable. We do not need a language model to decide whether a closed
+restaurant is feasible, whether a charger has the right connector, or which
+candidate wins a declared utility function.</p>
+<p>The tempting pipeline asks a powerful teacher to write thousands of request and
+answer pairs. The safer pipeline creates a structured situation, derives its
+answer with code, and asks a teacher—if one is used at all—to vary only the
+surface language.</p>
+<h2 id="truth-before-text">Truth before text</h2>
+<p>A RoutePilot scenario has four layers:</p>
+<ol>
+<li><strong>Context</strong> contains facts already known to the application, such as vehicle
+   connector or arrival deadline.</li>
+<li><strong>Candidates</strong> represent current results returned by a maps, POI, or charging
+   service. In this course they are synthetic records, never claims about a real
+   place.</li>
+<li><strong>Decision rules</strong> state hard constraints and soft utility weights, including
+   where each hard value came from.</li>
+<li><strong>Rendering</strong> expresses some of those constraints as a driver request.</li>
+</ol>
+<p>Generation follows that order. If prose comes first, an author must reverse
+engineer all implied constraints and may quietly add assumptions. If structured
+truth comes first, prose is one representation that can be checked against it.</p>
+<div class="codehilite"><pre><span></span><code>template + seed
+      |
+      v
+context + candidates + policy
+      |
+      v
+hard constraints + utility weights
+      |
+      +---- deterministic oracle ----&gt; expected choice
+      |
+      +---- renderer/paraphraser ----&gt; request text
+</code></pre></div>
+
+<p>The expected choice is never typed into the generator. The generator calls the
+same oracle used by evaluation:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">scenario</span><span class="p">[</span><span class="s2">"expected_choice_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_choice</span><span class="p">(</span><span class="n">scenario</span><span class="p">)</span>
+</code></pre></div>
+
+<p>This does not make the policy correct. It guarantees the label follows the
+policy that was actually declared. Reviewers can debate a 25-minute definition
+of “quick,” change it, version the dataset, and observe every affected label.</p>
+<h2 id="generate-candidates-that-test-the-contract">Generate candidates that test the contract</h2>
+<p>Uniform random candidates produce many boring cases. A useful template assigns
+roles deliberately:</p>
+<ul>
+<li>a candidate that is feasible and strongly preferred;</li>
+<li>a feasible alternative so ranking has work to do;</li>
+<li>an attractive candidate that violates one hard constraint;</li>
+<li>a candidate on or just across a numerical boundary;</li>
+<li>for clarification families, missing context that makes a call invalid.</li>
+</ul>
+<p>The attractive-but-infeasible case is essential. Without it, a model can ignore
+hard constraints and still select the same option as the oracle. The feasible
+alternative is equally important: without it, selection accuracy says nothing
+about ranking.</p>
+<p>Randomness can vary values inside those roles. It should not decide whether a
+scenario accidentally has no feasible answer unless that is the behavior being
+generated intentionally.</p>
+<h2 id="reproducibility-is-not-coverage">Reproducibility is not coverage</h2>
+<p>The committed generator uses a local pseudorandom number generator, a recorded
+seed, and a generator version. The same version and seed reconstruct the same
+fixture. That makes a release inspectable and makes a changed JSONL file easy to
+explain.</p>
+<p>A reproducible dataset can still be narrow, biased, or unrealistic. A seed does
+not answer:</p>
+<ul>
+<li>Which domains are present?</li>
+<li>Which limits appear exactly at equality?</li>
+<li>How many cases require clarification?</li>
+<li>Are constraints sourced from requests, context, and policy?</li>
+<li>Does one wording pattern dominate?</li>
+<li>Are any train examples siblings of development examples?</li>
+</ul>
+<p>Those questions require a coverage report. Scenario count is only one line in
+that report.</p>
+<h2 id="split-the-generator-not-its-output-rows">Split the generator, not its output rows</h2>
+<p>Suppose one template produces 10,000 requests by changing cuisine names and
+detour limits. A random 80/20 split puts the same syntax, candidate roles, and
+field relationships in train and development. The model can learn the
+generator's fingerprint rather than the product behavior.</p>
+<p>RoutePilot assigns each <code>template_family</code> to one split before generating rows.
+The first scaffold uses explicit-cuisine and explicit-connector families for
+training, while arrival-deadline and context-connector families go to
+development. Both splits contain food and charging behavior, but the mechanism
+that constructs each example does not cross the boundary.</p>
+<p>This is still not a final holdout. A private holdout should contain additional
+families and remain unavailable to training, autonomous experiment agents, and
+repeated unlimited submissions.</p>
+<h2 id="use-a-teacher-for-language-not-truth">Use a teacher for language, not truth</h2>
+<p>Self-Instruct demonstrated that model-generated instructions can expand
+instruction-tuning data, with filtering of invalid and similar generations.
+Evol-Instruct explored controlled rewriting toward more complex instructions.
+These results motivate language generation, but they do not require RoutePilot
+to delegate its verifiable labels.</p>
+<p>For this task, a teacher can:</p>
+<ul>
+<li>paraphrase a canonical request;</li>
+<li>introduce ordinary linguistic variation;</li>
+<li>propose difficult but reviewable ways to state the same constraints.</li>
+</ul>
+<p>A teacher must not:</p>
+<ul>
+<li>invent the tool result or live availability;</li>
+<li>choose the winning candidate;</li>
+<li>convert an unstated product policy into a supposed driver quote;</li>
+<li>see the private holdout;</li>
+<li>change a number while preserving fluent prose.</li>
+</ul>
+<p>Every retained paraphrase needs a constraint-preservation check. At minimum,
+compare the required typed arguments and numeric values with the rendered text
+and context. Store the raw generation record, model version, sampling settings,
+filter decision, and terms governing use of the output.</p>
+<h2 id="contamination-begins-in-your-own-pipeline">Contamination begins in your own pipeline</h2>
+<p>Benchmark contamination is often discussed as an unknowable property of a
+model's pretraining corpus. Course authors also control a simpler form: whether
+their own train and evaluation examples overlap.</p>
+<p>Exact-string deduplication is not enough for generated data. Two rows can differ
+in every restaurant name and number while sharing the same template, candidate
+roles, and solution path. Family-level splits make that relationship explicit.
+Later modules should add similarity and contamination reports, but no detector
+replaces a split designed before generation.</p>
+<h2 id="the-module-2-artifact">The Module 2 artifact</h2>
+<p>The first generator deliberately stays small. Four template families produce
+eight committed scenarios from seed <code>20260923</code>. The CLI validates every row
+before writing it, and tests confirm:</p>
+<ul>
+<li>identical seeds produce identical structures;</li>
+<li>a different seed changes the release;</li>
+<li>every declared choice equals the oracle result;</li>
+<li>no family crosses train and development;</li>
+<li>the committed JSONL equals a fresh documented generator run.</li>
+</ul>
+<p>Eight scenarios cannot train RoutePilot. They establish the machinery that a
+larger release must use. Scaling comes after a coverage matrix, rights review,
+and baseline measurement show which examples are worth generating.</p>
+<h2 id="what-comes-next">What comes next</h2>
+<p>Module 3 freezes prompts, model revisions, parsing behavior, and sampling
+settings for base and teacher baselines. If the base model already satisfies the
+contract reliably, training may not be justified. If failures cluster around
+constraint extraction, clarification, or ranking, the scenario factory can
+produce targeted evidence instead of an undirected pile of synthetic text.</p>
+<h2 id="sources">Sources</h2>
+<ul>
+<li>Wang et al., <a href="https://arxiv.org/abs/2212.10560">Self-Instruct: Aligning Language Models with Self-Generated
+  Instructions</a>, ACL 2023.</li>
+<li>Xu et al., <a href="https://arxiv.org/abs/2304.12244">WizardLM: Empowering Large Language Models to Follow Complex
+  Instructions</a>, ICLR 2024.</li>
+<li>Xu et al., <a href="https://arxiv.org/abs/2406.04244">Benchmark Data Contamination of Large Language Models: A
+  Survey</a>, 2024.</li>
+</ul><p class="lab-link"><strong>Lab:</strong> <a href="https://scimigo.com/en/learn/routepilot-1b/02-generate-scenarios-not-answers/lab" target="_blank" rel="noopener">Open the lab</a> — exercises you run against the benchmark on your own machine.</p>
+
+<script>
+/* A Copy button on every code block.
+   These pages are shown inside the course viewer's cross-origin iframe, where Chromium refuses
+   navigator.clipboard unless the embedding page grants clipboard-write. So: try the Clipboard API,
+   fall back to execCommand('copy'), and if both are refused, select the block so Ctrl/Cmd-C works
+   and say so. The label reads "Copied" only when a copy actually succeeded. */
+(function () {
+  function execCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function show(btn, label, copied) {
+    btn.textContent = label;
+    btn.classList.toggle('copied', copied);
+    clearTimeout(btn._reset);
+    btn._reset = setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+  }
+  var mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  Array.prototype.forEach.call(document.querySelectorAll('pre'), function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'copy-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.setAttribute('aria-label', 'Copy code to clipboard');
+    btn.addEventListener('click', function () {
+      var src = pre.querySelector('code') || pre;
+      var text = src.textContent.replace(/\n$/, '');
+      function fallback() {
+        if (execCopy(text)) return show(btn, 'Copied', true);
+        var range = document.createRange();
+        range.selectNodeContents(src);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        show(btn, mac ? 'Press ⌘C' : 'Press Ctrl+C', false);
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () { show(btn, 'Copied', true); }, fallback);
+      } else {
+        fallback();
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

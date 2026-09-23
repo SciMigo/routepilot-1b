@@ -42,7 +42,10 @@ Markdown under `reading/` is source. Generated HTML, lecture bundles, and audio
 are build artifacts and must be reproducible. Pin the renderer and syntax
 highlighter versions before committing generated HTML so rebuilds are no-ops.
 
-Until a pinned renderer exists, a module manifest points at the Markdown
-source. A manifest must not reference a build artifact that nothing in the
+`tools/build_pages.py` is that renderer, pinned by `requirements-build.txt`.
+It builds `reading/NN-slug.html` from each reading and
+`reading/lab-NN-slug.html` from each `modules/NN-slug/lab.md`; rebuild after
+editing either, commit the output, and confirm `python tools/build_pages.py
+--check` exits 0. A module manifest still points at the Markdown source. A manifest must not reference a build artifact that nothing in the
 repository produces: a path that resolves to nothing is worse than a path to
 the source, because it fails only at view time.
